@@ -202,6 +202,18 @@ export async function listCodes() {
   const snap = await fs.getDocs(fs.collection(D, CODES));
   return snap.docs.map((d) => ({ code: d.id, ...d.data() })).sort(byDate);
 }
+// Accès libre pour tous (décidé par le responsable) : document config/acces
+export async function getAccesLibre() {
+  if (mode !== "firebase") return null;
+  const { fs, D } = fb;
+  const snap = await fs.getDoc(fs.doc(D, "config", "acces"));
+  return snap.exists() ? snap.data() : { libre: false, jusqua: null };
+}
+export async function setAccesLibre(libre, jusqua = null) {
+  const { fs, D } = fb;
+  await fs.setDoc(fs.doc(D, "config", "acces"), { libre: !!libre, jusqua: libre ? jusqua : null, modifieLe: fs.serverTimestamp() });
+}
+
 export const resetCode = (code) => fs_().updateDoc(fs_().doc(fb.D, CODES, code), { utilisePar: null, utiliseLe: null });
 export const deleteCode = (code) => fs_().deleteDoc(fs_().doc(fb.D, CODES, code));
 const fs_ = () => fb.fs;

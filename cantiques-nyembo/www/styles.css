@@ -266,3 +266,10 @@ a.icon-btn { display: grid; place-items: center; text-decoration: none; }
 .dev-list table { width: 100%; border-collapse: collapse; }
 .dev-list th, .dev-list td { text-align: left; padding: 4px 4px; border-bottom: 1px solid var(--line); }
 .dev-list tr.moi td { font-weight: 700; color: var(--gold); }
+
+/* Accès libre */
+.libre-box { padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.libre-etat { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.libre-etat.on { background: #DFF3E7; color: #14532d; }
+.libre-form { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.libre-form label { flex: 1; min-width: 160px; }

@@ -37,6 +37,12 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['utilisePar', 'utiliseLe']));
     }
 
+    // Réglages publics : accès libre pour tous (lisible par tous, modifiable par le responsable)
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Statistiques anonymes : chaque téléphone ne met à jour que sa propre ligne
     match /appareils/{uid} {
       allow create, update: if request.auth != null && uid.matches('dv-[a-z0-9]{10}')

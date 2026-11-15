@@ -40,7 +40,12 @@ function suivi(compter) {
 let finAdmin = () => {};
 const adminConnu = new Promise((ok) => { finAdmin = ok; setTimeout(ok, 8000); });
 const accesCode = () => prefs.get("acces", null)?.code || "";
-const accesComplet = () => store.getMode() !== "firebase" || isAdminUser || !!accesCode();
+// Accès libre ouvert par le responsable (mémorisé sur le téléphone pour fonctionner hors connexion)
+const accesLibre = () => {
+  const c = prefs.get("accesLibre", null);
+  return !!(c && c.libre && (!c.jusqua || Date.now() < c.jusqua));
+};
+const accesComplet = () => store.getMode() !== "firebase" || isAdminUser || !!accesCode() || accesLibre();
 const verrouille = (h) => !accesComplet() && h.n > ACCES_LIBRE.cantiquesMax;
 const ecoutePermise = () => accesComplet() || ACCES_LIBRE.ecouteAudio;
 
@@ -60,6 +65,12 @@ document.documentElement.style.setProperty("--lyrics", prefs.get("taille", 1.15)
   await refreshAudio();
   if (store.getMode() !== "firebase") finAdmin();
   if (store.getMode() === "firebase") {
+    // Vérifie si le responsable a ouvert l'accès à tous
+    store.getAccesLibre().then((c) => {
+      const avant = accesLibre();
+      prefs.set("accesLibre", c ? { libre: !!c.libre, jusqua: c.jusqua || null } : null);
+      if (avant !== accesLibre()) route();
+    }).catch(() => {});
     store.onAdmin((admin) => {
       const was = isAdminUser; isAdminUser = !!admin; finAdmin();
       if (was !== isAdminUser) { route(); if (statsEnvoyees) suivi(false); }  // statut mis à jour à la connexion
@@ -648,7 +659,8 @@ function renderAbout() {
     <section class="card">
       <h2>Mon accès</h2>
       ${accesComplet()
-        ? `<p>✅ <strong>Accès complet</strong>${code ? ` — code <code>${esc(code)}</code>` : isAdminUser ? " — responsable" : ""}.</p>`
+        ? `<p>✅ <strong>Accès complet</strong>${code ? ` — code <code>${esc(code)}</code>` : isAdminUser ? " — responsable"
+            : accesLibre() ? ` — <strong>offert à tous</strong>${prefs.get("accesLibre").jusqua ? ` jusqu'au ${new Date(prefs.get("accesLibre").jusqua - 1).toLocaleDateString("fr-FR")}` : " pour le moment"}` : ""}.</p>`
         : `<p>Accès limité : cantiques 1 à ${ACCES_LIBRE.cantiquesMax}${ACCES_LIBRE.ecouteAudio ? "" : ", sans écoute des enregistrements"}.</p>
            <form class="code-form" id="code-form">
              <input name="code" placeholder="NYB-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
@@ -689,6 +701,8 @@ function renderAbout() {
 async function drawCodes(admin) {
   const box = $("#adm-list").closest(".card");
   box.innerHTML = `
+    <div class="libre-box" id="libre-box"><p class="muted">Chargement…</p></div>
+    <h2 style="margin-top:18px">Codes personnels</h2>
     <form class="code-gen" id="code-gen">
       <label>Nombre <input name="n" type="number" min="1" max="50" value="5"></label>
       <label>Pour (facultatif) <input name="note" maxlength="60" placeholder="Ex. : Chorale Saint-Paul"></label>
@@ -697,6 +711,7 @@ async function drawCodes(admin) {
     <p class="muted" style="font-size:.85rem">Chaque code ne s'active que sur <strong>un seul téléphone</strong> et donne un accès complet illimité.
       « Libérer » permet de le réutiliser (changement de téléphone).</p>
     <ul class="rec-list" id="code-list"><li class="muted">Chargement…</li></ul>`;
+  drawLibre();
   $("#code-gen").onsubmit = async (e) => {
     e.preventDefault();
     const f = e.target, b = $("button", f);
@@ -825,4 +840,41 @@ async function drawStats() {
     </div>
     <p class="muted" style="font-size:.8rem;margin:8px 0 0">Les statistiques d'utilisation sont anonymes et sont comptées par appareil depuis la version 1.0.13.
       Les téléchargements incluent vos propres essais.</p>`;
+}
+
+// ── Accès libre pour tous : ouverture / fermeture par le responsable ──────
+async function drawLibre() {
+  const el = $("#libre-box");
+  let c;
+  try { c = await store.getAccesLibre(); }
+  catch (e) { el.innerHTML = `<p class="form-msg err">Erreur : ${esc(e.message)}. Publiez les règles Firestore à jour.</p>`; return; }
+  const ouvert = c.libre && (!c.jusqua || Date.now() < c.jusqua);
+  const fin = c.jusqua ? new Date(c.jusqua - 1).toLocaleDateString("fr-FR") : null;
+  el.innerHTML = `
+    <h2>Accès libre pour tous</h2>
+    <p class="libre-etat ${ouvert ? "on" : ""}">${ouvert
+      ? `🔓 <strong>Ouvert</strong> : tout le monde a l'accès complet${fin ? ` jusqu'au <strong>${fin}</strong> inclus` : ", jusqu'à fermeture"}.`
+      : `🔒 <strong>Fermé</strong> : accès complet seulement avec un code personnel.`}</p>
+    ${ouvert
+      ? `<button class="btn danger" id="libre-fermer">Fermer l'accès libre</button>`
+      : `<form class="libre-form" id="libre-form">
+           <label>Jusqu'au (facultatif) <input type="date" name="fin" min="${new Date().toISOString().slice(0, 10)}"></label>
+           <button class="btn primary">Ouvrir l'accès à tous</button>
+         </form>`}
+    <p class="muted" style="font-size:.8rem;margin:8px 0 0">Les téléphones appliquent le changement à leur prochaine ouverture
+      avec internet. Une date de fin s'applique même sans connexion.</p>`;
+  const f = $("#libre-form");
+  if (f) f.onsubmit = async (e) => {
+    e.preventDefault();
+    const d = f.fin.value ? new Date(f.fin.value + "T23:59:59").getTime() + 1000 : null;
+    if (!confirm(d ? `Ouvrir l'accès complet à tous jusqu'au ${new Date(d - 1).toLocaleDateString("fr-FR")} ?` : "Ouvrir l'accès complet à tous jusqu'à ce que vous le fermiez ?")) return;
+    try { await store.setAccesLibre(true, d); toast("Accès libre ouvert."); drawLibre(); }
+    catch (err) { toast("Erreur : " + err.message); }
+  };
+  const b = $("#libre-fermer");
+  if (b) b.onclick = async () => {
+    if (!confirm("Fermer l'accès libre ? Seuls les téléphones avec un code garderont l'accès complet.")) return;
+    try { await store.setAccesLibre(false); toast("Accès libre fermé."); drawLibre(); }
+    catch (err) { toast("Erreur : " + err.message); }
+  };
 }
