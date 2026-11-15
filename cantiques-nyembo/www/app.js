@@ -878,3 +878,26 @@ async function drawLibre() {
     catch (err) { toast("Erreur : " + err.message); }
   };
 }
+
+// ── Bouton retour Android ──────────────────────────────────────────────────
+// 1) ferme la fenêtre ouverte (envoi d'un son, aller au numéro) ;
+// 2) sinon revient à l'écran précédent ;
+// 3) sur l'accueil : un second appui dans les 2 s quitte l'application.
+(() => {
+  const App = window.Capacitor?.Plugins?.App;
+  if (!App || !window.Capacitor.isNativePlatform?.()) return;
+  let dernierAppui = 0;
+  App.addListener("backButton", ({ canGoBack }) => {
+    const ouverte = [...document.querySelectorAll("dialog")].find((d) => d.open);
+    if (ouverte) { if (ouverte.id === "dlg-upload") stopRec(true); ouverte.close(); return; }
+    const accueil = !location.hash || location.hash === "#/" || location.hash === "#";
+    if (!accueil) {
+      if (canGoBack && history.length > 1) history.back();
+      else location.hash = "#/";
+      return;
+    }
+    if (Date.now() - dernierAppui < 2000) { App.exitApp(); return; }
+    dernierAppui = Date.now();
+    toast("Appuyez encore sur retour pour quitter");
+  });
+})();
