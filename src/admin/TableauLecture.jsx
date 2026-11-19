@@ -1,21 +1,69 @@
-import React,{useCallback,useEffect,useState}from"react";
+import React,{useCallback,useEffect,useMemo,useState}from"react";
 import{getAuth}from"firebase/auth";
 
 // ══════════════════ TABLEAU DE BORD EN LECTURE SEULE ══════════════════
 // Affiché aux observateurs désignés par l'administrateur (et en aperçu à l'administrateur).
 // Les chiffres viennent de /api/tableau (calculés côté serveur, agrégés, sans données personnelles).
+// Listes nominatives (inscrits, abonnés) : seulement si l'administrateur les a autorisées pour ce compte ; consultation
+// uniquement (recherche et filtres), aucune action de modification ou de suppression.
+
+const fmtDate=d=>d?new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"}):"—";
+const TON_STATUT={"Actif":"ok","Demande en cours":"alerte","Expiré":"danger","Sans abonnement":null};
+const sansAccents=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+
+function Listes({K,mob,inscrits,mode}){
+  const T=TONS(K);
+  const[q,sQ]=useState(""),[filtre,sFiltre]=useState("tous");
+  const base=mode==="abonnes"?inscrits.filter(x=>x.statut==="Actif").sort((a,b)=>(a.joursRestants??1e9)-(b.joursRestants??1e9)):inscrits;
+  const statuts=["tous","Actif","Demande en cours","Expiré","Sans abonnement"];
+  const vus=useMemo(()=>{const k=sansAccents(q.trim());return base.filter(x=>(mode==="abonnes"||filtre==="tous"||x.statut===filtre)&&(!k||sansAccents(x.nom).includes(k)||sansAccents(x.mail).includes(k)));},[base,q,filtre,mode]);
+  const carte={background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:16};
+  const pastille=st=><span style={{fontSize:11.5,fontWeight:800,borderRadius:99,padding:"2px 9px",whiteSpace:"nowrap",color:T[TON_STATUT[st]]||K.t2,background:K.c2,border:`1px solid ${K.b0}`}}>{st}</span>;
+  const restants=x=>x.joursRestants==null?"—":x.joursRestants<=7?<b style={{color:K.wa}}>{x.joursRestants} j</b>:`${x.joursRestants} j`;
+  const cols=mode==="abonnes"
+    ?[["Nom",x=>x.nom],["E-mail",x=>x.mail],["Offre",x=>x.offre||"—"],["Expire le",x=>fmtDate(x.expire)],["Reste",restants],["Dernière connexion",x=>fmtDate(x.derniereConnexion)]]
+    :[["Nom",x=>x.nom],["E-mail",x=>x.mail],["Profil",x=>x.role],["Inscrit le",x=>fmtDate(x.inscrit)],["Abonnement",x=>pastille(x.statut)],["Dernière connexion",x=>fmtDate(x.derniereConnexion)],["Modules réussis",x=>x.modulesTermines]];
+  return <div>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:10}}>
+      <input value={q} onChange={e=>sQ(e.target.value)} placeholder="Rechercher un nom ou un e-mail" aria-label="Rechercher" style={{flex:1,minWidth:200,padding:"10px 13px",background:K.card,border:`1px solid ${K.b1}`,borderRadius:10,color:K.t1,fontSize:14,fontFamily:"'Outfit',sans-serif"}}/>
+      <span style={{fontSize:13,color:K.t3,fontWeight:700}}>{vus.length} / {base.length}</span>
+    </div>
+    {mode!=="abonnes"&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+      {statuts.map(st=><button key={st} onClick={()=>sFiltre(st)} aria-pressed={filtre===st} className="bt" style={{fontSize:12.5,fontWeight:800,borderRadius:99,padding:"6px 12px",cursor:"pointer",fontFamily:"'Outfit',sans-serif",background:filtre===st?K.t1:K.card,color:filtre===st?K.card:K.t2,border:`1px solid ${filtre===st?K.t1:K.b1}`}}>
+        {st==="tous"?"Tous":st} ({st==="tous"?inscrits.length:inscrits.filter(x=>x.statut===st).length})</button>)}
+    </div>}
+    {vus.length===0?<div style={{...carte,padding:24,textAlign:"center",color:K.t3,fontSize:14}}>{base.length?"Aucun résultat pour cette recherche.":mode==="abonnes"?"Aucun abonnement actif pour l'instant.":"Aucun inscrit pour l'instant."}</div>
+    :mob?<div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {vus.map((x,i)=><div key={i} style={{...carte,padding:"11px 13px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start"}}>
+          <div style={{minWidth:0}}><div style={{fontWeight:800,fontSize:14.5,color:K.t1}}>{x.nom}</div><div style={{fontSize:12.5,color:K.t3,wordBreak:"break-all"}}>{x.mail}</div></div>
+          {mode==="abonnes"?<span style={{fontSize:12.5,color:K.t2,whiteSpace:"nowrap"}}>{restants(x)}</span>:pastille(x.statut)}
+        </div>
+        <div style={{fontSize:12.5,color:K.t2,marginTop:6,lineHeight:1.5}}>
+          {mode==="abonnes"?<>Offre {x.offre||"—"} · expire le {fmtDate(x.expire)}</>:<>{x.role} · inscrit le {fmtDate(x.inscrit)} · {x.modulesTermines} module{x.modulesTermines>1?"s":""} réussi{x.modulesTermines>1?"s":""}</>}
+          <br/>Dernière connexion : {fmtDate(x.derniereConnexion)}</div>
+      </div>)}
+    </div>
+    :<div style={{...carte,overflow:"hidden"}}><div style={{overflowX:"auto"}}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13.5}}>
+        <thead><tr>{cols.map(([h])=><th key={h} style={{textAlign:"left",padding:"10px 12px",background:K.c2,color:K.t2,fontWeight:800,fontSize:12.5,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+        <tbody>{vus.map((x,i)=><tr key={i} style={{borderTop:`1px solid ${K.b0}`}}>{cols.map(([h,f],j)=><td key={h} style={{padding:"9px 12px",color:j?K.t2:K.t1,fontWeight:j?500:700,whiteSpace:j===1?"normal":"nowrap"}}>{f(x)}</td>)}</tr>)}</tbody>
+      </table></div></div>}
+    <div style={{fontSize:12,color:K.t3,marginTop:8,lineHeight:1.5}}><i className="ti ti-lock" style={{marginRight:4}}/>Consultation seule : ces informations personnelles sont confidentielles et ne doivent pas être diffusées.</div>
+  </div>;
+}
 
 const TONS=K=>({ok:K.em,info:K.in_,alerte:K.wa,danger:K.er});
 const fmtNb=v=>v==null?"—":Number(v).toLocaleString("fr-FR").replace(/[  ]/g," ");
 
 export default function TableauLecture({K,mob,apercu}){
-  const[d,sD]=useState(null),[err,sErr]=useState(""),[enc,sEnc]=useState(false);
+  const[d,sD]=useState(null),[err,sErr]=useState(""),[enc,sEnc]=useState(false),[onglet,sOnglet]=useState("chiffres");
   const charger=useCallback(async()=>{
     sEnc(true);sErr("");
     try{
       const u=getAuth().currentUser;
       if(!u)throw new Error("Session expirée : reconnectez-vous.");
-      const r=await fetch("/api/tableau",{headers:{Authorization:`Bearer ${await u.getIdToken()}`}});
+      const r=await fetch("/api/tableau?listes=1",{headers:{Authorization:`Bearer ${await u.getIdToken()}`}});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||!j.ok)throw new Error(j.raison||"Tableau de bord indisponible pour le moment.");
       sD(j);
@@ -30,7 +78,7 @@ export default function TableauLecture({K,mob,apercu}){
       <i className="ti ti-chart-dots" style={{position:"absolute",right:-8,bottom:-24,fontSize:150,opacity:.1}}/>
       <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,fontWeight:800,letterSpacing:.6,textTransform:"uppercase",background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.22)",borderRadius:99,padding:"5px 11px"}}><i className="ti ti-eye"/>Lecture seule{apercu?" · aperçu administrateur":""}</div>
       <div style={{fontFamily:"'Fraunces',serif",fontWeight:800,fontSize:mob?26:31,lineHeight:1.15,margin:"10px 0 6px"}}>Tableau de bord Éco-Campus</div>
-      <div style={{fontSize:14.5,opacity:.9,lineHeight:1.55,maxWidth:620}}>Les chiffres clés de la plateforme, mis à jour à chaque ouverture. Ils sont agrégés : aucune information personnelle sur les apprenants n'est affichée.</div>
+      <div style={{fontSize:14.5,opacity:.9,lineHeight:1.55,maxWidth:620}}>{d&&d.listes?"Les chiffres clés de la plateforme et les listes des inscrits et des abonnés, mis à jour à chaque ouverture. Consultation seule : rien ne peut être modifié ni supprimé.":"Les chiffres clés de la plateforme, mis à jour à chaque ouverture. Ils sont agrégés : aucune information personnelle sur les apprenants n'est affichée."}</div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginTop:14,flexWrap:"wrap"}}>
         <button onClick={charger} disabled={enc} className="bt" style={{background:"rgba(255,255,255,.16)",color:"#fff",border:"1px solid rgba(255,255,255,.3)",borderRadius:11,padding:"8px 14px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",display:"inline-flex",alignItems:"center",gap:6}}>
           <i className={`ti ti-refresh`}/>{enc?"Mise à jour…":"Actualiser"}</button>
@@ -41,7 +89,13 @@ export default function TableauLecture({K,mob,apercu}){
     {err&&<div style={{...carte,padding:"14px 16px",marginBottom:14,background:K.erBg,border:`1px solid ${K.erBd}`,color:K.er,fontWeight:700,fontSize:14}}><i className="ti ti-alert-triangle" style={{marginRight:6}}/>{err}</div>}
     {!d&&!err&&<div style={{...carte,padding:30,textAlign:"center",color:K.t3}}>Chargement des indicateurs…</div>}
 
-    {d&&<>
+    {d&&d.listes&&Array.isArray(d.inscrits)&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}} role="tablist">
+      {[["chiffres","chart-dots","Indicateurs"],["inscrits","users",`Inscrits (${d.inscrits.length})`],["abonnes","circle-check",`Abonnés (${d.inscrits.filter(x=>x.statut==="Actif").length})`]].map(([k,ic,l])=><button key={k} role="tab" aria-selected={onglet===k} onClick={()=>sOnglet(k)} className="bt"
+        style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 15px",borderRadius:99,fontWeight:800,fontSize:13.5,cursor:"pointer",fontFamily:"'Outfit',sans-serif",background:onglet===k?"#0A2A5C":K.card,color:onglet===k?"#fff":K.t1,border:`1px solid ${onglet===k?"#0A2A5C":K.b1}`}}><i className={`ti ti-${ic}`}/>{l}</button>)}
+    </div>}
+    {d&&d.listes&&Array.isArray(d.inscrits)&&onglet!=="chiffres"&&<Listes K={K} mob={mob} inscrits={d.inscrits} mode={onglet}/>}
+
+    {d&&(onglet==="chiffres"||!d.listes)&&<>
       {d.groupes.map(g=><div key={g.titre} style={{marginBottom:22}}>
         <div style={{display:"flex",alignItems:"center",gap:7,fontSize:13,fontWeight:800,color:K.t2,letterSpacing:.6,textTransform:"uppercase",marginBottom:10}}><i className={`ti ti-${g.ico}`} style={{fontSize:16}}/>{g.titre}</div>
         <div style={{display:"grid",gridTemplateColumns:mob?"repeat(2,1fr)":"repeat(auto-fill,minmax(170px,1fr))",gap:mob?8:10}}>

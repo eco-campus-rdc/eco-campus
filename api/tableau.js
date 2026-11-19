@@ -2,9 +2,11 @@
 // Seuls l'administrateur et les comptes listés dans config/observateurs.uids y ont accès.
 // La réponse ne contient que des chiffres agrégés (src/admin/indicateurs.js) : aucune donnée personnelle.
 // Variable d'environnement requise : FIREBASE_SERVICE_ACCOUNT (la même que pour /api/attestation).
-// GET /api/tableau (en-tête Authorization: Bearer <jeton d'identité Firebase>) → { ok, genereLe, groupes, parcours }
+// GET /api/tableau (en-tête Authorization: Bearer <jeton d'identité Firebase>) → { ok, genereLe, groupes, parcours, listes, inscrits? }
+// Listes nominatives (inscrits, abonnés) : seulement pour l'administrateur et les observateurs de config/observateurs.listes,
+// avec des champs limités (src/admin/indicateurs.js, listeInscrits). Aucune écriture : la fonction ne fait que lire.
 const admin = require("firebase-admin");
-const { indicateurs } = require("../src/admin/indicateurs");
+const { indicateurs, listeInscrits } = require("../src/admin/indicateurs");
 
 const ADMIN = "admin@accessplus.com";
 
@@ -30,17 +32,20 @@ module.exports = async (req, res) => {
 
   const db = admin.firestore();
   const estAdmin = jeton.email === ADMIN;
+  let listes = estAdmin;
   if (!estAdmin) {
     const cfg = await db.collection("config").doc("observateurs").get();
-    const uids = (cfg.exists && Array.isArray(cfg.data().uids)) ? cfg.data().uids : [];
+    const c = cfg.exists ? cfg.data() : {};
+    const uids = Array.isArray(c.uids) ? c.uids : [];
     if (!uids.includes(jeton.uid)) return res.status(403).json({ ok: false, raison: "Votre compte n'a pas accès au tableau de bord." });
+    listes = Array.isArray(c.listes) && c.listes.includes(jeton.uid);
   }
 
   try {
     const [users, modules, presentations, videos, stages, psycho, attestations, demandes] = await Promise.all(
       ["users", "modules", "presentations", "videos", "stages", "psychoScores", "attestations", "demandes"].map(n => tout(db, n)));
     const r = indicateurs({ users, modules, presentations, videos, stages, psycho, attestations, demandes, maintenant: new Date() });
-    return res.status(200).json({ ok: true, genereLe: new Date().toISOString(), ...r });
+    return res.status(200).json({ ok: true, genereLe: new Date().toISOString(), ...r, listes, ...(listes ? { inscrits: listeInscrits(users, new Date()) } : {}) });
   } catch (e) {
     return res.status(500).json({ ok: false, raison: "Calcul des indicateurs impossible pour le moment." });
   }

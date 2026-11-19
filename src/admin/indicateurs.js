@@ -9,7 +9,7 @@ const JOUR = 86400000;
 const estExercice = cle => /^(CPT-|JRN-)/.test(cle);
 const moyenne = L => (L.length ? Math.round(L.reduce((a, b) => a + b, 0) / L.length) : null);
 const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
-const expire = d => !d || new Date(d) < new Date(); // comme xp() dans l'application
+const expire = (d, maintenant = new Date()) => !d || new Date(d) < maintenant; // comme xp() dans l'application
 
 // Date d'inscription : « 3/10/2026 » (format français enregistré à l'inscription) ou ISO
 function dateInscription(v) {
@@ -34,9 +34,9 @@ function indicateurs(d) {
   const apprenants = users.filter(u => u.role !== "formateur");
   const formateurs = users.filter(u => u.role === "formateur");
 
-  const actifs = users.filter(u => u.abonnement === "actif" && !expire(u.dateExpiration)).length;
+  const actifs = users.filter(u => u.abonnement === "actif" && !expire(u.dateExpiration, maintenant)).length;
   const demandes = users.filter(u => u.abonnement === "demande").length;
-  const expires = users.filter(u => u.abonnement === "expiré" || (u.abonnement === "actif" && expire(u.dateExpiration))).length;
+  const expires = users.filter(u => u.abonnement === "expiré" || (u.abonnement === "actif" && expire(u.dateExpiration, maintenant))).length;
   const nouveaux = users.filter(u => { const t = dateInscription(u.createdAt); return t && t.getMonth() === maintenant.getMonth() && t.getFullYear() === maintenant.getFullYear(); }).length;
   const nouveaux30 = users.filter(u => { const t = dateInscription(u.createdAt); return t && maintenant - t <= 30 * JOUR; }).length;
 
@@ -114,4 +114,31 @@ function indicateurs(d) {
   };
 }
 
-module.exports = { indicateurs, dateInscription };
+// ── Listes nominatives (inscrits, abonnés), réservées aux observateurs autorisés par l'administrateur ──
+// Champs limités au strict nécessaire : ni code d'activation, ni téléphone, ni référence de paiement, ni notes détaillées.
+const OFFRE = { "1m": "1 mois", "3m": "3 mois", "1a": "1 an" };
+function statutAbonnement(u, maintenant = new Date()) {
+  if (u.abonnement === "actif" && !expire(u.dateExpiration, maintenant)) return "Actif";
+  if (u.abonnement === "expiré" || (u.abonnement === "actif" && expire(u.dateExpiration, maintenant))) return "Expiré";
+  if (u.abonnement === "demande") return "Demande en cours";
+  return "Sans abonnement";
+}
+function listeInscrits(usersBruts, maintenant = new Date()) {
+  return (usersBruts || []).filter(u => u && u.mail !== ADMIN).map(u => {
+    const t = dateInscription(u.createdAt), fin = u.dateExpiration ? new Date(u.dateExpiration) : null, st = statutAbonnement(u, maintenant);
+    return {
+      nom: String(u.nom || "").trim() || "—",
+      mail: String(u.mail || ""),
+      role: u.role === "formateur" ? "Formateur" : "Apprenant",
+      inscrit: t ? t.toISOString().slice(0, 10) : null,
+      statut: st,
+      offre: OFFRE[u.dureeId] || null,
+      expire: fin && !isNaN(fin) ? fin.toISOString().slice(0, 10) : null,
+      joursRestants: fin && !isNaN(fin) && st === "Actif" ? Math.ceil((fin - maintenant) / JOUR) : null,
+      derniereConnexion: u.lastLogin ? new Date(u.lastLogin).toISOString().slice(0, 10) : null,
+      modulesTermines: Object.values(u.progress || {}).filter(v => v === "done").length + Object.entries(u.scores || {}).filter(([c, s]) => !estExercice(c) && s && s.pct >= R.SEUIL_ELEMENT).length,
+    };
+  }).sort((a, b) => String(b.inscrit || "").localeCompare(String(a.inscrit || "")) || a.nom.localeCompare(b.nom, "fr"));
+}
+
+module.exports = { indicateurs, dateInscription, listeInscrits, statutAbonnement };
