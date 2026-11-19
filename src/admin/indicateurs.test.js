@@ -1,4 +1,4 @@
-import { indicateurs, dateInscription } from "./indicateurs";
+import { indicateurs, dateInscription, listeInscrits } from "./indicateurs";
 
 const J = 86400000, maintenant = new Date(2026, 10, 14, 12);
 const users = [
@@ -36,4 +36,20 @@ test("indicateurs agrégés : comptes, abonnements, engagement, notes, certifica
 test("aucune donnée personnelle dans la réponse", () => {
   const texte = JSON.stringify(r);
   for (const u of users) for (const v of [u.nom, u.mail, u.uid, u.demandeTel, u.activationCode].filter(x => x && x.length > 2)) expect(texte).not.toContain(v);
+});
+
+test("listes nominatives : champs limités, statuts, abonnés et jours restants", () => {
+  const L = listeInscrits([...users, { uid: "d", nom: "Paul", mail: "p@ex.cd", abonnement: "actif", dureeId: "3m", dateExpiration: new Date(+maintenant + 5 * J).toISOString(), createdAt: "10/11/2026" }], maintenant);
+  expect(L).toHaveLength(5); // administrateur exclu
+  const champs = ["nom", "mail", "role", "inscrit", "statut", "offre", "expire", "joursRestants", "derniereConnexion", "modulesTermines"];
+  for (const x of L) expect(Object.keys(x).sort()).toEqual([...champs].sort());
+  const texte = JSON.stringify(L);
+  for (const v of ["EC-SECRET1", "0990000000", "uid"]) expect(texte).not.toContain(v);
+  const P = n => L.find(x => x.nom === n);
+  expect(P("Grâce Kabeya")).toMatchObject({ statut: "Actif", inscrit: "2026-11-03", role: "Apprenant", modulesTermines: 4 });
+  expect(P("Jean Lukusa").statut).toBe("Demande en cours");
+  expect(P("Ancien").statut).toBe("Expiré");
+  expect(P("Patrick")).toMatchObject({ role: "Formateur", statut: "Sans abonnement" });
+  expect(P("Paul")).toMatchObject({ statut: "Actif", offre: "3 mois", joursRestants: 5 });
+  expect(L.map(x => x.inscrit)).toEqual([...L.map(x => x.inscrit)].sort().reverse()); // les plus récents d'abord
 });
