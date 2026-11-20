@@ -17,7 +17,7 @@ test("tous les écrans existants restent accessibles", () => {
   ["home", "form", "msg", "pres", "stages", "videos", "ef", "jrn", "cpt", "audio", "parcs", "fisc", "fin", "syc", "banq", "eduf", "psycho", "services", "res", "param", "sugg", "apropos", "tdb"]
     .forEach(v => expect(VUES_APPRENANT).toContain(v));
   // les 25 onglets de l'admin
-  ["home", "val", "d", "a", "e", "t", "s", "m", "v", "pr", "st", "dm", "p", "fo", "an", "au", "pl", "ef", "fisc", "fin", "syc", "banq", "eduf", "parcs", "ac", "att", "obs", "nt", "sg", "msg"]
+  ["home", "val", "d", "a", "e", "t", "s", "m", "v", "pr", "st", "dm", "p", "fo", "an", "au", "pl", "ef", "fisc", "fin", "syc", "banq", "eduf", "parcs", "ac", "att", "obs", "essai", "nt", "sg", "msg"]
     .forEach(t => expect(VUES_ADMIN).toContain(t));
   expect(GROUPES_APPRENANT.length).toBe(6);
   expect(GROUPES_ADMIN.length).toBe(10);
