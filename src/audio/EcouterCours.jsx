@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import LecteurAudio from "./LecteurAudio";
-import { dureeMinutes, texteFiche, texteModuleBanque, texteModuleCours, texteModuleEduf, texteModuleFinance, texteModuleParcs, texteModuleFiscal, texteModuleSycebnl, texteNarration } from "./lecture";
+import { dureeMinutes, texteFiche, texteModuleBanque, texteModuleCours, texteModuleEduf, texteModuleFinance, texteModuleTravail, texteModuleParcs, texteModuleFiscal, texteModuleSycebnl, texteNarration } from "./lecture";
 import { MODULES_FISC } from "../fiscal/modules";
 import { MODULES_FIN } from "../finance/modules";
 import { MODULES_SYC } from "../sycebnl/modules";
 import { MODULES_BQ } from "../banque/modules";
 import { MODULES_EDUF } from "../eduf/modules";
+import { MODULES_DT } from "../travail/modules";
 import { MODULE_PARCS } from "../parcs/module";
 import { CLASSES_REV, chargerPlan, chargerTout } from "../ef/syscohada";
 
@@ -40,6 +41,7 @@ export default function EcouterCours({ K, mob, mods = [], pres = [], ok, onSub }
     banq: MODULES_BQ.map(m => ({ cle: `BQ-${m.id}`, titre: `${m.id} · ${m.titre}`, sous: "Comptabilité bancaire", libre: ok || m.libre, segs: texteModuleBanque(m) })),
     syc: MODULES_SYC.map(m => ({ cle: `SB-${m.id}`, titre: `${m.id} · ${m.titre}`, sous: "SYCEBNL", libre: ok || m.libre, segs: texteModuleSycebnl(m) })),
     parcs: [{ cle: "PARCS", titre: MODULE_PARCS.titre, sous: "Culture générale", libre: true, segs: texteModuleParcs(MODULE_PARCS) }],
+    dtrav: MODULES_DT.map(m => ({ cle: `DT-${m.id}`, titre: `${m.id} · ${m.titre}`, sous: "Droit du travail", libre: ok || m.libre, segs: texteModuleTravail(m) })),
     eduf: MODULES_EDUF.map(m => ({ cle: `EF-${m.id}`, titre: `${m.id} · ${m.titre}`, sous: "Éducation financière", libre: ok || m.libre, segs: texteModuleEduf(m) })),
     mod: mods.filter(m => m.on !== false).map(m => ({ cle: `M-${m.id}`, titre: m.titre, sous: m.mat || m.code || "", libre: true, segs: texteModuleCours(m, ok) })),
     pres: pres.filter(p => p.narration).map(p => ({ cle: `P-${p.id}`, titre: p.titre, sous: p.mat || "Présentation", libre: ok || !!p.gr, segs: texteNarration(p) })),
@@ -76,7 +78,7 @@ export default function EcouterCours({ K, mob, mods = [], pres = [], ok, onSub }
     </div>}
 
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-      {[["fisc", "receipt-tax", `Code des impôts (${MODULES_FISC.length})`], ["fin", "chart-pie", `Finance (${MODULES_FIN.length})`], ["banq", "building-bank", `Banque (${MODULES_BQ.length})`], ["syc", "building-community", `SYCEBNL (${MODULES_SYC.length})`], ["eduf", "pig-money", `Éducation financière (${MODULES_EDUF.length})`], ["parcs", "trees", "Parcs de la RDC"], ["guide", "books", "Guide des comptes"], ["mod", "book-2", `Modules (${listes.mod.length})`], ...(listes.pres.length ? [["pres", "presentation", `Présentations (${listes.pres.length})`]] : [])].map(([k, ico, l]) => <button key={k} onClick={() => sOnglet(k)} className="bt" style={puce(K, onglet === k)}><i className={`ti ti-${ico}`} style={{ fontSize: 14 }} />{l}</button>)}
+      {[["fisc", "receipt-tax", `Code des impôts (${MODULES_FISC.length})`], ["fin", "chart-pie", `Finance (${MODULES_FIN.length})`], ["banq", "building-bank", `Banque (${MODULES_BQ.length})`], ["syc", "building-community", `SYCEBNL (${MODULES_SYC.length})`], ["dtrav", "scale", `Droit du travail (${MODULES_DT.length})`], ["eduf", "pig-money", `Éducation financière (${MODULES_EDUF.length})`], ["parcs", "trees", "Parcs de la RDC"], ["guide", "books", "Guide des comptes"], ["mod", "book-2", `Modules (${listes.mod.length})`], ...(listes.pres.length ? [["pres", "presentation", `Présentations (${listes.pres.length})`]] : [])].map(([k, ico, l]) => <button key={k} onClick={() => sOnglet(k)} className="bt" style={puce(K, onglet === k)}><i className={`ti ti-${ico}`} style={{ fontSize: 14 }} />{l}</button>)}
     </div>
     {onglet === "guide" && <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
       {CLASSES_REV.map(([k]) => <button key={k} onClick={() => sClasse(k)} className="bt" style={{ ...puce(K, classe === k), padding: "5px 10px", fontSize: 11.5 }}>Classe {k}</button>)}

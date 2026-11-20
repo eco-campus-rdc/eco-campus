@@ -21,6 +21,8 @@ export const FORMATIONS = [
     resume: "Le Guide comptable de la BCC : dépôts, crédits, compensation, devises, créances en souffrance, états financiers et analyse d'une banque." },
   { id: "SYCEBNL", ico: "building-community", col: "#0F766E", niveau: "Spécialisation", libre: "SB1",
     resume: "Associations, ONG, fondations, églises : dotations, fonds affectés, bailleurs, bénévolat et analyse financière." },
+  { id: "DTRAV", ico: "scale", col: "#7C3AED", niveau: "Intermédiaire", libre: "DT1",
+    resume: "Le Code du travail et la réforme de 2016 : contrats, essai, discipline, maternité, temps de travail, congés, préavis, licenciement et recours." },
   { id: "EDUF", ico: "pig-money", col: "#15803D", niveau: "Tous publics", libre: "EF1", nLibres: 3,
     resume: "Pour tous : budget, épargne, Mobile Money, crédit, dollar et inflation, assurances, arnaques et projets d'avenir, avec simulateurs." },
 ];
@@ -70,7 +72,7 @@ export default function MesFormations({ K, mob, user, mods, ok, onGo, onExam, on
 
     {!ok && <div style={{ display: "flex", alignItems: "center", gap: 10, background: K.waBg, border: `1px solid ${K.waBd}`, borderRadius: 14, padding: "11px 14px", marginBottom: 14, flexWrap: "wrap" }}>
       <i className="ti ti-lock-open" style={{ fontSize: 18, color: K.wa }} />
-      <div style={{ flex: 1, minWidth: 200, fontSize: 13.5, color: K.t1, lineHeight: 1.5 }}>Le premier module de la Fiscalité, de la Finance d'entreprise, de la Comptabilité bancaire et du SYCEBNL est gratuit, ainsi que les trois premiers de l'Éducation financière. Les parcours complets, les examens et les certificats sont réservés aux abonnés.</div>
+      <div style={{ flex: 1, minWidth: 200, fontSize: 13.5, color: K.t1, lineHeight: 1.5 }}>Le premier module de la Fiscalité, de la Finance d'entreprise, de la Comptabilité bancaire, du SYCEBNL et du Droit du travail est gratuit, ainsi que les trois premiers de l'Éducation financière. Les parcours complets, les examens et les certificats sont réservés aux abonnés.</div>
       {onSub && <button onClick={onSub} className="bt" style={{ background: `linear-gradient(135deg,${K.emD},${K.em})`, color: "#fff", border: "none", borderRadius: 11, padding: "9px 14px", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>{LIB_ACCES}</button>}
     </div>}
 

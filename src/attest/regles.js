@@ -58,6 +58,13 @@ const EF = [
   ["EF7", "Faire fructifier son argent"], ["EF8", "Préparer l'avenir"],
 ];
 const cleEf = id => `EF-${id}`;
+// Modules de droit du travail (Code du travail 2002, loi n° 16/010 de 2016 ; aligné sur src/travail/modules — vérifié par les tests)
+const DT = [
+  ["DT1", "Le cadre du droit du travail en RDC"], ["DT2", "Le contrat de travail : CDD, CDI et période d'essai"],
+  ["DT3", "Exécuter le contrat : obligations, discipline, maladie et maternité"], ["DT4", "Temps de travail, salaire et congés"],
+  ["DT5", "La fin du contrat : préavis, licenciement et décompte final"], ["DT6", "Faire valoir ses droits : inspection, conciliation, tribunal et syndicats"],
+];
+const cleDt = id => `DT-${id}`;
 const CLE_FINAL_SYC = "SYC-FINAL";
 const COEF_FINAL_SYC = 2; // = COEF_FINAL
 const cleSyc = id => `SYC-${id}`;
@@ -73,6 +80,7 @@ const EXAMENS = {
   SYCEBNL: { cle: CLE_FINAL_SYC, nbQ: 30, heures: 1, vue: "syc", progressif: true },
   BANQUE: { cle: "BQ-FINAL", nbQ: 30, heures: 1, vue: "banq", progressif: true },
   EDUF: { cle: "EF-FINAL", nbQ: 30, heures: 1, vue: "eduf", progressif: true },
+  DTRAV: { cle: "DT-FINAL", nbQ: 30, heures: 1, vue: "dtrav", progressif: true },
 };
 
 const PARCOURS = [
@@ -90,6 +98,8 @@ const PARCOURS = [
     description: "Les 12 modules de comptabilité bancaire selon le GCEC de la Banque Centrale du Congo (cadre, plan de comptes, clientèle, paiements et compensation, trésorerie et BCC, titres, devises et hors-bilan, créances en souffrance, soldes de gestion et reporting, états financiers, analyse financière, agios et escompte, financements spécialisés et garanties) et l'examen final de 30 questions, coefficient 2." },
   { id: "EDUF", titre: "Éducation financière — Bien gérer son argent en RDC", court: "Éducation financière", certificat: true,
     description: "Les 8 modules d'éducation financière (budget, épargne, banque et Mobile Money, crédit, monnaies et inflation, assurances et arnaques, investissement, préparation de l'avenir), avec simulateurs, et l'examen final de 30 questions, coefficient 2." },
+  { id: "DTRAV", titre: "Droit du travail en RDC — Code du travail et réforme de 2016", court: "Droit du travail", certificat: true,
+    description: "Les 6 modules de droit du travail congolais (cadre et réforme de 2016, contrat et période d'essai, exécution, maladie et maternité, temps de travail, salaire et congés, préavis et fin du contrat, conciliation, tribunal et syndicats), avec un simulateur de préavis, et l'examen final de 30 questions, coefficient 2." },
 ];
 
 // Modules de cours pris en compte : ceux publiés (on !== false), dans l'ordre du catalogue
@@ -107,6 +117,8 @@ function elementsBase(id, modules) {
   // 1 h 30 par module (leçon, audio, QCM)
   if (id === "BANQUE") return BQ.map(([f, t]) => ({ cle: cleBq(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   // 1 h par module (leçon, simulateur, audio, QCM)
+  // 1 h 30 par module (leçon, simulateur de préavis, audio, QCM)
+  if (id === "DTRAV") return DT.map(([f, t]) => ({ cle: cleDt(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   if (id === "EDUF") return EF.map(([f, t]) => ({ cle: cleEf(f), titre: `${f} · ${t}`, heures: 1, evalue: true }));
   if (id === "SYCEBNL") return SYC.map(([f, t]) => ({ cle: cleSyc(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   if (id === "SYS-N2") return [
@@ -184,4 +196,4 @@ function numeroAttestation(alea = Math.random, annee = new Date().getFullYear())
 }
 const numeroValide = n => /^EC-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/.test(String(n || ""));
 
-module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
+module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
