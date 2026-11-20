@@ -165,3 +165,8 @@ export function texteModuleEduf(mod) {
 export function texteModuleParcs(mod) {
   return segments([point(mod.titre), ...(mod.narration || []).map(point)]);
 }
+
+// ── Module de droit du travail (src/travail/modules.js) : narration écrite pour l'oral
+export function texteModuleTravail(mod) {
+  return segments([point(`Droit du travail, module ${String(mod.id).replace(/^DT/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);
+}

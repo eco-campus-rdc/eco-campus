@@ -9,6 +9,8 @@ import FinanceEntreprise from"./finance/FinanceEntreprise";
 import Sycebnl from"./sycebnl/Sycebnl";
 import Banque from"./banque/Banque";
 import Eduf from"./eduf/Eduf";
+import Travail from"./travail/Travail";
+import{MODULES_DT}from"./travail/modules";
 import ParcsRdc from"./parcs/ParcsRdc";
 import OuParcs from"./parcs/OuParcs";
 import{NIVEAUX_PARCS}from"./parcs/sites";
@@ -269,7 +271,7 @@ function useUsers(){
 // activite/{uid} : dernière activité de chaque compte (signal toutes les 90 s quand l'onglet est visible)
 // connexions/{id} : une ligne par ouverture de session (une fois par onglet)
 const ENLIGNE_MS=4*60*1000;
-const VUE_LBL={home:"Accueil",form:"Mes formations",msg:"Messages",pres:"Présentations",jrn:"Monographie ZAO",cpt:"Guide des comptes",audio:"Écouter les cours",fisc:"Code des impôts",fin:"Finance d'entreprise",syc:"SYCEBNL",banq:"Comptabilité bancaire",eduf:"Éducation financière",tdb:"Tableau de bord",parcs:"Parcs et sites de la RDC",sugg:"Suggestions",apropos:"À propos",stages:"Stages",videos:"Vidéos",ef:"États financiers",psycho:"Tests psychotechniques",services:"Services",prog:"Progrès",res:"Résultats",mods:"Mes modules",vids:"Mes vidéos",docs:"Documents",corr:"Corrections",fmsg:"Messages",stats:"Statistiques",admin:"Administration",param:"Paramètres"};
+const VUE_LBL={home:"Accueil",form:"Mes formations",msg:"Messages",pres:"Présentations",jrn:"Monographie ZAO",cpt:"Guide des comptes",audio:"Écouter les cours",fisc:"Code des impôts",fin:"Finance d'entreprise",syc:"SYCEBNL",banq:"Comptabilité bancaire",eduf:"Éducation financière",dtrav:"Droit du travail",tdb:"Tableau de bord",parcs:"Parcs et sites de la RDC",sugg:"Suggestions",apropos:"À propos",stages:"Stages",videos:"Vidéos",ef:"États financiers",psycho:"Tests psychotechniques",services:"Services",prog:"Progrès",res:"Résultats",mods:"Mes modules",vids:"Mes vidéos",docs:"Documents",corr:"Corrections",fmsg:"Messages",stats:"Statistiques",admin:"Administration",param:"Paramètres"};
 const appareil=()=>{const ua=navigator.userAgent||"";const os=/Android/i.test(ua)?"Android":/iPhone|iPad|iPod/i.test(ua)?"iOS":/Windows/i.test(ua)?"Windows":/Mac OS/i.test(ua)?"Mac":/Linux/i.test(ua)?"Linux":"Autre";
   const nav=/Edg\//.test(ua)?"Edge":/OPR\//.test(ua)?"Opera":/SamsungBrowser/.test(ua)?"Samsung":/Chrome\//.test(ua)?"Chrome":/Firefox\//.test(ua)?"Firefox":/Safari\//.test(ua)?"Safari":"Navigateur";
   const app=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||String(document.referrer).startsWith("android-app://")?"Application":"Site web";
@@ -1600,6 +1602,7 @@ function FA({uid,onOut}){
     {k:"syc",ico:"building-community",label:"SYCEBNL"},
     {k:"banq",ico:"building-bank",label:"Banque"},
     {k:"eduf",ico:"pig-money",label:"Éducation financière"},
+    {k:"dtrav",ico:"scale",label:"Droit du travail"},
     {k:"parcs",ico:"trees",label:"Parcs de la RDC"},
     {k:"sugg",ico:"bulb",label:"Suggestions"},
     {k:"apropos",ico:"info-circle",label:"À propos"},
@@ -1636,6 +1639,7 @@ function FA({uid,onOut}){
         {ico:"chart-pie",col:"#B7791F",label:"Finance d'entreprise",desc:"7 modules, 16 cas corrigés et cours audio",on:()=>sV("fin")},
         {ico:"building-community",col:"#0F766E",label:"SYCEBNL",desc:"8 modules EBNL, examen final et certificat",on:()=>sV("syc")},
         {ico:"pig-money",col:"#15803D",label:"Éducation financière",desc:"8 modules grand public et 3 simulateurs",on:()=>sV("eduf")},
+        {ico:"scale",col:"#7C3AED",label:"Droit du travail",desc:"6 modules, simulateur de préavis, examen final",on:()=>sV("dtrav")},
       ].map((t,i)=><ActionTile key={t.label} {...t} i={i}/>)}
     </div>
 
@@ -1691,6 +1695,7 @@ function FA({uid,onOut}){
   if(vue==="syc")return W(<Sycebnl K={K} mob={mob} apercu/>);
   if(vue==="banq")return W(<Banque K={K} mob={mob} apercu/>);
   if(vue==="eduf")return W(<Eduf K={K} mob={mob} apercu/>);
+  if(vue==="dtrav")return W(<Travail K={K} mob={mob} apercu/>);
   if(vue==="parcs")return W(<ParcsRdc K={K} mob={mob} apercu/>);
   if(vue==="sugg")return W(<Suggestions K={K} mob={mob} db={db} me={{uid,nom:fData.nom,mail:fData.mail,role:"formateur"}}/>);
   if(vue==="apropos")return W(<Apropos K={K} mob={mob} onGo={sV}/>);
@@ -2844,6 +2849,7 @@ function UA({uid,onOut}){
     {vue==="syc"&&<Sycebnl K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="banq"&&<Banque K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="eduf"&&<Eduf K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="dtrav"&&<Travail K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="parcs"&&<ParcsRdc K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} onGo={sV}/>}
     {vue==="sugg"&&<Suggestions K={K} mob={mob} db={db} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}}/>}
     {vue==="apropos"&&<Apropos K={K} mob={mob} onGo={sV} services/>}
@@ -3461,7 +3467,7 @@ function Home({u,pr,sc,gp,nd,ok,mods,vids,onOpen,onSub,onVid,onPres,onStages,onE
   // Raccourcis : le menu donne accès à tout le reste (src/nav/navigation.js)
   const aller=v=>onGo&&onGo(v);
   const features=[
-    {key:"parcours",ico:"certificate",label:"Mes formations",desc:"7 parcours certifiants : SYSCOHADA N1 et N2, Fiscalité, Finance, Banque, SYCEBNL, Éducation financière",action:()=>aller("form")},
+    {key:"parcours",ico:"certificate",label:"Mes formations",desc:"8 parcours certifiants : SYSCOHADA N1 et N2, Fiscalité, Finance, Banque, SYCEBNL, Droit du travail, Éducation financière",action:()=>aller("form")},
     {key:"modules",ico:"tools",label:"Outils pratiques",desc:"Atelier États financiers et Guide des comptes SYSCOHADA",action:()=>aller("ef")},
     {key:"audio",ico:"headphones",label:"Écouter les cours",desc:"Leçons en audio, à écouter partout",action:()=>aller("audio")},
     {key:"res",ico:"trophy",label:"Mes résultats",desc:"Scores de tous vos QCM, badges et attestations",action:()=>aller("res")},
@@ -3835,14 +3841,16 @@ function MesResultats({pr,sc,gp,nd,ok,abonne,mods,u,uid,onSub,onGo}){
       {cle:"BQ-FINAL",titre:"Examen final Comptabilité bancaire (30 questions, coefficient 2)",sous:"Comptabilité bancaire · certificat",s:sc["BQ-FINAL"],go:"banq"}],
     eduf:[...MODULES_EDUF.map(m=>({cle:`EF-${m.id}`,titre:`${m.id} · ${m.titre}`,sous:"Éducation financière",s:sc[`EF-${m.id}`],col:m.col,go:"eduf"})),
       {cle:"EF-FINAL",titre:"Examen final Éducation financière (30 questions, coefficient 2)",sous:"Éducation financière · certificat",s:sc["EF-FINAL"],go:"eduf"}],
+    dtrav:[...MODULES_DT.map(m=>({cle:`DT-${m.id}`,titre:`${m.id} · ${m.titre}`,sous:"Droit du travail",s:sc[`DT-${m.id}`],col:m.col,go:"dtrav"})),
+      {cle:"DT-FINAL",titre:"Examen final Droit du travail (30 questions, coefficient 2)",sous:"Droit du travail · certificat",s:sc["DT-FINAL"],go:"dtrav"}],
     exo:[{cle:"JRN-ZAO",titre:"Monographie ZAO IMMO : du journal aux états financiers",sous:"États financiers",s:sc["JRN-ZAO"],go:"jrn"},
       ...CLES_CPT.map(c=>({cle:c,titre:c==="CPT-T"?"« Quel compte ? » : toutes les classes":`« Quel compte ? » : classe ${c.slice(4)}`,sous:"Guide des comptes",s:sc[c],go:"cpt"})),
       {cle:"SYS2-FINAL",titre:"Examen final SYSCOHADA Niveau 2 : passer les écritures (30 questions)",sous:"SYSCOHADA · certificat",s:sc["SYS2-FINAL"],go:"jrn"}],
   };
-  const qcm=[...L.cours,...L.fisc,...L.fin,...L.syc,...L.banq,...L.eduf].filter(x=>x.s&&x.s.pct!=null);
+  const qcm=[...L.cours,...L.fisc,...L.fin,...L.syc,...L.banq,...L.eduf,...L.dtrav].filter(x=>x.s&&x.s.pct!=null);
   const moy=moyenne(qcm.map(x=>x.s.pct)),best=qcm.length?Math.max(...qcm.map(x=>x.s.pct)):null;
   const reussis=qcm.filter(x=>x.s.pct>=SEUIL_ELEMENT).length;
-  const ONGLETS=[["cours","book-2","SYSCOHADA N1"],["exo","notebook","SYSCOHADA N2 et exercices"],["fisc","receipt-tax","Fiscalité RDC"],["fin","chart-pie","Finance d'entreprise"],["banq","building-bank","Banque"],["syc","building-community","SYCEBNL"],["eduf","pig-money","Éducation financière"]];
+  const ONGLETS=[["cours","book-2","SYSCOHADA N1"],["exo","notebook","SYSCOHADA N2 et exercices"],["fisc","receipt-tax","Fiscalité RDC"],["fin","chart-pie","Finance d'entreprise"],["banq","building-bank","Banque"],["syc","building-community","SYCEBNL"],["dtrav","scale","Droit du travail"],["eduf","pig-money","Éducation financière"]];
   const nFaits=k=>L[k].filter(x=>(x.s&&x.s.pct!=null)||x.fait).length;
   const liste=L[onglet];
   return <div style={{maxWidth:760,margin:"0 auto",animation:"fadeIn .3s ease"}}>
@@ -4699,6 +4707,7 @@ function AA({onOut}){
           {k:"syc",ico:"building-community",label:"SYCEBNL",     col:"#0F766E"},
           {k:"banq",ico:"building-bank",label:"Comptabilité bancaire",col:"#0A2A5C"},
           {k:"eduf",ico:"pig-money",    label:"Éducation financière",col:"#15803D"},
+          {k:"dtrav",ico:"scale",       label:"Droit du travail",col:"#7C3AED"},
           {k:"parcs",ico:"trees",       label:"Parcs de la RDC",col:"#15803D"},
           {k:"ac",ico:"ticket",         label:"Tarifs et codes offerts",col:"#0D7A6B"},
           {k:"att",ico:"certificate",   label:"Attestations",   col:"#B7791F"},
@@ -5378,6 +5387,7 @@ function AA({onOut}){
     {tab==="syc"&&<Sycebnl K={K} mob={mob} apercu/>}
     {tab==="banq"&&<Banque K={K} mob={mob} apercu/>}
     {tab==="eduf"&&<Eduf K={K} mob={mob} apercu/>}
+    {tab==="dtrav"&&<Travail K={K} mob={mob} apercu/>}
     {tab==="parcs"&&<ParcsRdc K={K} mob={mob} apercu/>}
     {tab==="obs"&&<Observateurs K={K} mob={mob} db={db} users={users}/>}
     {tab==="essai"&&<AdminEssai K={K} mob={mob} db={db} users={users}/>}
