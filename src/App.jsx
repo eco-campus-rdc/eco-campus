@@ -14,6 +14,9 @@ import OuParcs from"./parcs/OuParcs";
 import{NIVEAUX_PARCS}from"./parcs/sites";
 import TableauLecture from"./admin/TableauLecture";
 import Observateurs,{useObservateurs}from"./admin/Observateurs";
+import AdminEssai,{useConfigEssai}from"./essai/AdminEssai";
+import{BandeauEssai,FinEssai,CarteParrainage}from"./essai/BandeauEssai";
+import{etatEssai,parrainDepuisUrl}from"./essai/essai";
 import PuzzleCarte from"./psycho/PuzzleCarte";
 import OuSeTrouve from"./psycho/OuSeTrouve";
 import{NIVEAUX_CARTE,NIVEAUX_OU,libelleDuree}from"./psycho/puzzle";
@@ -103,6 +106,12 @@ let redirP=null;
 const resultatRedirection=()=>redirP||(redirP=getRedirectResult(auth).catch(e=>({erreur:e})));
 const lireSocial=()=>{try{return JSON.parse(sessionStorage.getItem(CLE_SOCIAL)||"null");}catch(e){return null;}};
 const effacerSocial=()=>{try{sessionStorage.removeItem(CLE_SOCIAL);}catch(e){}};
+// Parrainage : le lien ?parrain=<uid> est retenu (localStorage) jusqu'à l'inscription, puis enregistré dans users.parrainUid
+const CLE_PARRAIN="ec-parrain";
+try{const p=parrainDepuisUrl(window.location.search);if(p)localStorage.setItem(CLE_PARRAIN,p);}catch(e){}
+const parrainRetenu=uid=>{try{const p=localStorage.getItem(CLE_PARRAIN);return p&&p!==uid?p:null;}catch(e){return null;}};
+const oublierParrain=()=>{try{localStorage.removeItem(CLE_PARRAIN);}catch(e){}};
+const MSG_BIENVENUE="Votre compte vient d'être créé avec succès sur Éco-Campus RDC.\n\nCadeau de bienvenue : votre essai complet commence maintenant. Pendant votre période d'essai, tous les parcours, examens finaux, ateliers et cours audio sont ouverts.\n\nÀ la fin de l'essai, vos scores sont conservés et les modules gratuits restent ouverts ; l'abonnement débloque tout le reste et la délivrance des certificats.\n\nÀ très vite !";
 // Module de connexion de Firebase chargé à l'avance (8 s au plus) : les boutons Google et Facebook attendent qu'il soit prêt,
 // pour que la fenêtre s'ouvre dans la foulée du clic, même sur une connexion lente.
 let pretP=null;
@@ -2558,8 +2567,10 @@ function Auth({onL}){
     sB(true);
     try{
       const cred=await createUserWithEmailAndPassword(auth,m,p);
-      await saveUserData(cred.user.uid,{nom:n,mail:m,createdAt:new Date().toLocaleDateString("fr-FR"),abonnement:"aucun",activationCode:null,codeValide:false,demandeDate:null,dureeId:null,dateExpiration:null,progress:{},scores:{},consentDate:new Date().toISOString(),consentVersion:PRIVACY_VERSION});
-      sendNotifEmail({to_email:m,subject:"Bienvenue sur Éco-Campus RDC 🎉",nom:n,message:"Votre compte vient d'être créé avec succès sur Éco-Campus RDC.\n\nProchaine étape : faites votre demande d'accès à une formation depuis votre espace, puis réglez votre inscription. Vous recevrez ensuite votre code d'activation par email pour débloquer vos modules.\n\nÀ très vite !"});
+      const parrain=parrainRetenu(cred.user.uid);
+      await saveUserData(cred.user.uid,{nom:n,mail:m,createdAt:new Date().toLocaleDateString("fr-FR"),abonnement:"aucun",activationCode:null,codeValide:false,demandeDate:null,dureeId:null,dateExpiration:null,progress:{},scores:{},consentDate:new Date().toISOString(),consentVersion:PRIVACY_VERSION,...(parrain?{parrainUid:parrain}:{})});
+      oublierParrain();
+      sendNotifEmail({to_email:m,subject:"Bienvenue sur Éco-Campus RDC 🎉",nom:n,message:MSG_BIENVENUE});
       sO("Compte créé !");setTimeout(()=>sw("l"),1100);
     }catch(e){sE(e.code==="auth/email-already-in-use"?"Email déjà utilisé.":e.message);}
     sB(false);
@@ -2626,8 +2637,10 @@ function Auth({onL}){
           await signOut(auth);sB(false);sT("r");sNeedConsent(true);
           return sE("Première connexion avec ce compte : acceptez la politique de confidentialité ci-dessous, puis cliquez à nouveau sur le bouton.");
         }
-        await setDoc(doc(db,"users",user.uid),{nom:user.displayName||user.email.split("@")[0],mail:user.email,createdAt:new Date().toLocaleDateString("fr-FR"),abonnement:"aucun",activationCode:null,codeValide:false,demandeDate:null,dureeId:null,dateExpiration:null,progress:{},scores:{},consentDate:new Date().toISOString(),consentVersion:PRIVACY_VERSION,lastLogin:Date.now()});
-        sendNotifEmail({to_email:user.email,subject:"Bienvenue sur Éco-Campus RDC 🎉",nom:user.displayName||user.email.split("@")[0],message:"Votre compte vient d'être créé avec succès sur Éco-Campus RDC.\n\nProchaine étape : faites votre demande d'accès à une formation depuis votre espace, puis réglez votre inscription. Vous recevrez ensuite votre code d'activation par email pour débloquer vos modules.\n\nÀ très vite !"});
+        const parrain=parrainRetenu(user.uid);
+        await setDoc(doc(db,"users",user.uid),{nom:user.displayName||user.email.split("@")[0],mail:user.email,createdAt:new Date().toLocaleDateString("fr-FR"),abonnement:"aucun",activationCode:null,codeValide:false,demandeDate:null,dureeId:null,dateExpiration:null,progress:{},scores:{},consentDate:new Date().toISOString(),consentVersion:PRIVACY_VERSION,lastLogin:Date.now(),...(parrain?{parrainUid:parrain}:{})});
+        oublierParrain();
+        sendNotifEmail({to_email:user.email,subject:"Bienvenue sur Éco-Campus RDC 🎉",nom:user.displayName||user.email.split("@")[0],message:MSG_BIENVENUE});
       }else{
         const u=snap.data();
         if(u.abonnement==="actif"&&xp(u.dateExpiration)){await updateDoc(doc(db,"users",user.uid),{abonnement:"expiré"});}
@@ -2689,7 +2702,8 @@ function Auth({onL}){
         </div>
         <div style={{background:K.card,border:`1px solid ${K.b1}`,boxShadow:K.sh,borderRadius:16,padding:mob?"17px 15px":"21px 19px",boxShadow:"0 20px 55px rgba(0,0,0,.3)"}}>
           {step===1&&<div style={{display:"flex",background:K.bg,borderRadius:9,padding:3,marginBottom:17,gap:2}}>{[["l","Connexion"],["r","Inscription"]].map(([k,l])=><button key={k} onClick={()=>sw(k)} className="bt" style={{flex:1,padding:"9px",borderRadius:7,border:"none",fontWeight:700,fontSize:14,fontFamily:"'Outfit',sans-serif",cursor:"pointer",background:tab===k?K.c2:"transparent",color:tab===k?K.t1:K.t3,minHeight:38}}>{l}</button>)}</div>}
-          <div style={{marginBottom:15}}><div style={{fontSize:15,fontWeight:800,color:K.t1,marginBottom:3}}>{step===2?"🔐 Code d'activation":tab==="l"?"Bon retour 👋":"Créer un compte"}</div><div style={{fontSize:13,color:K.t3,lineHeight:1.5}}>{step===2?"Code reçu de l'administrateur":tab==="l"?"Accédez à votre formation":"Inscription gratuite · Accès sur abonnement"}</div></div>
+          <div style={{marginBottom:15}}><div style={{fontSize:15,fontWeight:800,color:K.t1,marginBottom:3}}>{step===2?"🔐 Code d'activation":tab==="l"?"Bon retour 👋":"Créer un compte"}</div><div style={{fontSize:13,color:K.t3,lineHeight:1.5}}>{step===2?"Code reçu de l'administrateur":tab==="l"?"Accédez à votre formation":"Inscription gratuite · essai complet offert"}</div>
+            {step!==2&&tab==="r"&&parrainRetenu(null)&&<div style={{marginTop:8,background:K.emBg,border:`1px solid ${K.emBd}`,borderRadius:10,padding:"8px 11px",fontSize:12.5,fontWeight:700,color:K.em,lineHeight:1.45}}>🎁 Vous êtes invité par un ami : votre essai complet est prolongé.</div>}</div>
           {step===2&&<Inp lb="Mot de passe" rf={rP} type="password" ph="Le même qu'à l'inscription" ok={hk}/>}
           {step===2&&<Inp lb="Code d'activation" rf={rC} ph="EC-XXXXXXXX ou OF-XXXXXXXX" mono note="Code d'accès ou code offert reçu d'Éco-Campus" ok={hk}/>}
           {step===1&&tab==="r"&&<Inp lb="Nom complet" rf={rN} ph="Votre nom" ok={hk}/>}
@@ -2751,6 +2765,7 @@ function UA({uid,onOut}){
   const[vue,sV]=useState(()=>{try{return normaliserVue(new URLSearchParams(window.location.search).get("vue"));}catch{return"home";}}),[mod,sM]=useState(null),[exam,sExam]=useState(null),[quiz,sQ]=useState(null),[openQuiz,sOpenQuiz]=useState(null),[sub,sSub]=useState(false);
   const[uData,sUD]=useState(null),[pdfs,sPdfs]=useState({});
   const estObs=useObservateurs(db).includes(uid); // accès en lecture au tableau de bord (désigné par l'administrateur)
+  const cfgEssai=useConfigEssai(db); // essai gratuit et parrainage (config/essai)
   const[showOnboarding,sShowOnboarding]=useState(false);
   const{mods,loading:mL}=useModules();
   const allPres=usePresentations();
@@ -2784,7 +2799,11 @@ function UA({uid,onOut}){
   const myOpenAnswers=useMyOpenAnswers(uid);
   usePresence({uid,nom:uData?.nom,mail:auth.currentUser?.email||uData?.mail,role:"apprenant",vue:mod?`Module : ${mod.titre}`:VUE_LBL[vue]||vue});
   if(!uData||mL)return <div style={{minHeight:"100vh",background:K.bg}}><style>{mCss(K)}</style><Spin/></div>;
-  const ok=uData.abonnement==="actif"&&!xp(uData.dateExpiration);
+  // Accès complet : abonnement actif, ou essai complet en cours (date de création du compte Firebase, non modifiable)
+  const abonne=uData.abonnement==="actif"&&!xp(uData.dateExpiration);
+  const essai=etatEssai({creeLe:auth.currentUser?.metadata?.creationTime||uData.createdAt,parrainUid:uData.parrainUid,cfg:cfgEssai});
+  const ok=abonne||essai.enCours;
+  const reussites=Object.values(uData.scores||{}).filter(x=>x&&x.pct>=SEUIL_ELEMENT).length;
   const aMods=mods.filter(m=>m.on!==false);
   const pr=uData.progress||{},sc=uData.scores||{};
   // Parcours SYSCOHADA : modules ouverts dans l'ordre (acquis conservés), examens finaux N1 (Modules de cours) et N2 (ZAO, Guide des comptes)
@@ -2793,16 +2812,18 @@ function UA({uid,onOut}){
   const nd=aMods.filter(m=>pr[m.id]==="done").length,gp=aMods.length?Math.round(nd/aMods.length*100):0;
   const save=async(modId,s,t)=>{try{await saveProgress(uid,modId,{s,t,pct:Math.round(s/t*100)});}catch(e){alert("Score non enregistré (connexion ?). Repassez l'évaluation une fois en ligne.");}};
   const markDoneNoEval=async modId=>{await updateDoc(doc(db,"users",uid),{[`progress.${modId}`]:"done"});sM(null);sV("res");};
-  const W=(ch,hideNav)=><div style={{minHeight:"100vh",background:K.bg,fontFamily:"'Outfit',sans-serif"}}><style>{mCss(K)}</style>{!hideNav&&<Nav u={uData} vue={vue} sV={v=>{sV(v);sM(null);sExam(null);}} ok={ok} onSub={()=>sSub(true)} onOut={onOut} live={live.on} uid={uid}/>}<main className="mp" style={{maxWidth:1060,margin:"0 auto",padding:hideNav?"14px":undefined,paddingBottom:hideNav?20:(mob?80:20)}}>{ch}</main>{sub&&<SubM onClose={()=>sSub(false)} uid={uid} u={uData}/>}{showOnboarding&&<Onboarding u={uData} onDone={doneOnboarding} mods={aMods}/>}<AutoLogoutBanner warning={uaWarn} mob={mob}/></div>;
+  const W=(ch,hideNav)=><div style={{minHeight:"100vh",background:K.bg,fontFamily:"'Outfit',sans-serif"}}><style>{mCss(K)}</style>{!hideNav&&<Nav u={uData} vue={vue} sV={v=>{sV(v);sM(null);sExam(null);}} ok={abonne} essai={!abonne&&essai.enCours?essai.joursRestants:null} onSub={()=>sSub(true)} onOut={onOut} live={live.on} uid={uid}/>}<main className="mp" style={{maxWidth:1060,margin:"0 auto",padding:hideNav?"14px":undefined,paddingBottom:hideNav?20:(mob?80:20)}}>{ch}</main>{sub&&<SubM onClose={()=>sSub(false)} uid={uid} u={uData}/>}{showOnboarding&&<Onboarding u={uData} onDone={doneOnboarding} mods={aMods}/>}{!showOnboarding&&<FinEssai K={K} uid={uid} essai={essai} abonne={abonne} reussites={reussites} pret={cfgEssai.charge} onSub={()=>sSub(true)}/>}<AutoLogoutBanner warning={uaWarn} mob={mob}/></div>;
   if(quiz)return W(<QZ mod={quiz} onDone={async(s,t)=>{await save(quiz.id,s,t);sQ(null);sM(null);sV("res");}} onBack={()=>sQ(null)}/>);
   if(openQuiz)return W(<OpenQuiz mod={openQuiz} uid={uid} uNom={uData.nom} onDone={()=>{sOpenQuiz(null);sM(null);sV("res");}} onBack={()=>sOpenQuiz(null)}/>,true);
   if(exam)return W(<ExamenFinal K={K} mob={mob} db={db} uid={uid} id={exam} ancien={sc[EXAMENS[exam].cle]} onRetour={()=>sExam(null)}/>);
   if(mod)return W(<MV mod={mod} sc={sc[mod.id]} ok={ok} onQ={()=>sQ(mod)} onOpenQ={()=>sOpenQuiz(mod)} onMarkDone={()=>markDoneNoEval(mod.id)} doneNoEval={pr[mod.id]==="done"} openAnswer={myOpenAnswers.find(a=>a.modId===mod.id)} onBack={()=>sM(null)} onSub={()=>sSub(true)} vids={vids.filter(v=>v.mid===mod.id)} pdf={pdfs[mod.id]} uid={uid} uNom={uData.nom}/>,true);
   return W(<>
     <SousNav groupes={GROUPES_APPRENANT} vue={vue} onGo={sV}/>
+    {vue==="home"&&<BandeauEssai K={K} mob={mob} essai={essai} abonne={abonne} reussites={reussites} onSub={()=>sSub(true)}/>}
     {vue==="home"&&estObs&&<button onClick={()=>sV("tdb")} className="bt" style={{width:"100%",display:"flex",alignItems:"center",gap:12,textAlign:"left",background:"linear-gradient(135deg,#011B33,#1E4FA3)",color:"#fff",border:"none",borderRadius:16,padding:"14px 16px",marginBottom:14,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
       <i className="ti ti-chart-dots" style={{fontSize:26,flexShrink:0}}/><span style={{flex:1}}><span style={{display:"block",fontWeight:800,fontSize:15}}>Tableau de bord Éco-Campus</span><span style={{display:"block",fontSize:13,opacity:.85}}>Accès en lecture seule accordé par l'administration</span></span><i className="ti ti-chevron-right" style={{fontSize:20}}/></button>}
     {vue==="tdb"&&(estObs?<TableauLecture K={K} mob={mob}/>:<div style={{textAlign:"center",color:K.t3,padding:30}}>Votre compte n'a pas accès au tableau de bord.</div>)}
+    {vue==="home"&&<CarteParrainage K={K} mob={mob} uid={uid} gagnes={uData.parrainageGagnes||0} cfg={cfgEssai}/>}
     {vue==="home"&&<Home u={uData} pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} mods={aMods} vids={vids} onOpen={ouvrirModule} onSub={()=>sSub(true)} onVid={()=>sV("videos")} onPres={()=>sV("pres")} onStages={()=>sV("stages")} onEf={()=>sV("ef")} onFisc={()=>sV("fisc")} onFin={()=>sV("fin")} onJrn={()=>sV("jrn")} onCpt={()=>sV("cpt")} onAudio={()=>sV("audio")} live={live} presCount={allPres.filter(estPublie).length} uid={uid} onGo={sV}/>}
     {vue==="videos"&&<VidsPage ok={ok} onSub={()=>sSub(true)} vids={vids} live={live}/>}
     {vue==="pres"&&<PresPage ok={ok} onSub={()=>sSub(true)} pres={allPres.filter(estPublie)}/>
@@ -2810,7 +2831,7 @@ function UA({uid,onOut}){
     }{vue==="services"&&<ServicesPage user={uData}/>}
     {vue==="form"&&<MesFormations K={K} mob={mob} user={uData} mods={aMods} ok={ok} onGo={sV} onExam={sExam} onSub={()=>sSub(true)}/>}
     {vue==="mods"&&<ModulesCours mods={aMods} pr={pr} sc={sc} ok={ok} vids={vids} onOpen={ouvrirModule} uid={uid} onSub={()=>sSub(true)} etat={etatN1} onExam={()=>sExam("SYS-N1")} onGo={sV}/>}
-    {vue==="res"&&<MesResultats pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} mods={aMods} u={uData} uid={uid} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="res"&&<MesResultats pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} abonne={abonne} mods={aMods} u={uData} uid={uid} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="psycho"&&<PsychoPage uid={uid} u={uData}/>}
     {vue==="param"&&<ParametresPage role="apprenant" uid={uid} data={uData} onOut={onOut} onGo={sV}/>}
     {vue==="ef"&&<EtatsFinanciers key="ef" sansRaccourcis db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)}/>}
@@ -3291,7 +3312,7 @@ function MessagerieApprenant({uid,uNom}){
     </div>
   </div>;
 }
-function Nav({u,vue,sV,ok,onSub,onOut,live,uid}){
+function Nav({u,vue,sV,ok,essai,onSub,onOut,live,uid}){
   const K=useK();const{mob}=useW();
   const myMsgs=useMessages(uid);
   const unreadMsg=myMsgs.filter(m=>m.fromRole!=="apprenant"&&!m.luApprenant).length;
@@ -3327,7 +3348,7 @@ function Nav({u,vue,sV,ok,onSub,onOut,live,uid}){
       <div className="nb" style={{background:`${K.card}f0`,backdropFilter:"blur(16px)",borderBottom:`1px solid ${K.b0}`,display:"flex",alignItems:"center",justifyContent:"space-between",height:50,position:"sticky",top:0,zIndex:99}}>
         <Logo sm/>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {ok
+          {essai!=null&&!ok?<button onClick={onSub} className="bt" title="Essai complet en cours : choisir un abonnement" style={{background:"#F2A93B22",border:"1px solid #F2A93B88",borderRadius:99,padding:"3px 10px",fontSize:11.5,fontWeight:800,color:"#B7791F",cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>🎁 Essai · {essai} j</button>:ok
             ?<div style={{display:"flex",alignItems:"center",gap:5,background:K.emBg,border:`1px solid ${K.emBd}`,borderRadius:99,padding:"3px 9px"}}><span style={{width:6,height:6,borderRadius:"50%",background:K.em,display:"inline-block",animation:"gw 2s ease-in-out infinite"}}/><span style={{fontSize:11,fontWeight:700,color:K.em}}>{u.dureeId==="v"?"∞ Actif":"✓ Actif"}</span></div>
             :<button onClick={onSub} className="bt" style={{background:`linear-gradient(135deg,${K.emD},${K.em})`,border:"none",borderRadius:99,padding:"4px 11px",fontSize:12,fontWeight:800,color:"#FFFFFF",cursor:"pointer"}}>Accéder</button>
           }
@@ -3396,7 +3417,7 @@ function Nav({u,vue,sV,ok,onSub,onOut,live,uid}){
       })}
     </div>
     <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-      {ok
+      {essai!=null&&!ok?<button onClick={onSub} className="bt" title="Essai complet en cours : choisir un abonnement" style={{background:"#F2A93B22",border:"1px solid #F2A93B88",borderRadius:99,padding:"5px 12px",fontSize:12.5,fontWeight:800,color:"#B7791F",cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>🎁 Essai complet · {essai} jour{essai>1?"s":""}</button>:ok
         ?<div style={{display:"flex",alignItems:"center",gap:5,background:K.emBg,border:`1px solid ${K.emBd}`,borderRadius:99,padding:"4px 11px"}}><span style={{width:6,height:6,borderRadius:"50%",background:K.em,display:"inline-block",animation:"gw 2s ease-in-out infinite"}}/><span style={{fontSize:12,fontWeight:700,color:K.em}}>{u.dureeId==="v"?"∞ À vie":"✓ Actif"}</span></div>
         :<button onClick={onSub} className="bt" style={{background:`linear-gradient(135deg,${K.emD},${K.em})`,border:"none",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:800,color:"#FFFFFF",cursor:"pointer"}}>{LIB_ACCES}</button>
       }
@@ -3796,7 +3817,7 @@ function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo}){
 // ── MES RÉSULTATS : progression, scores de tous les QCM, badges et attestations ──
 // QCM : modules de cours (clé = id), Code des impôts (FISC-…), Finance d'entreprise (FIN-…), SYCEBNL (SYC-…) → moyenne.
 // Exercices pratiques (« Quel compte ? » CPT-…, monographie JRN-ZAO) : suivis à part, hors moyenne (voir ef/syscohada/scores.js).
-function MesResultats({pr,sc,gp,nd,ok,mods,u,uid,onSub,onGo}){
+function MesResultats({pr,sc,gp,nd,ok,abonne,mods,u,uid,onSub,onGo}){
   const K=useK();const{mob}=useW();const{tid}=useContext(Ctx);
   const isLight=['light','sepia'].includes(tid);
   const[onglet,sOnglet]=useState("cours");
@@ -3835,7 +3856,7 @@ function MesResultats({pr,sc,gp,nd,ok,mods,u,uid,onSub,onGo}){
         {[[`${nd}/${mods.length}`,"Modules terminés",K.em],[`${qcm.length}`,"QCM passés",K.t2],[`${reussis}`,`Réussis (≥ ${SEUIL_ELEMENT} %)`,K.em],[`${qcm.length-reussis}`,"À retravailler",K.er]].map(([v,l,c])=><div key={l} style={{background:isLight?"rgba(255,255,255,.7)":K.b0,borderRadius:9,padding:"7px 12px",border:`1px solid ${K.b1}`}}><div style={{color:c,fontWeight:800,fontSize:16,lineHeight:1}}>{v}</div><div style={{color:K.t3,fontSize:11,marginTop:2}}>{l}</div></div>)}
       </div>
     </div>
-    <MesAttestations K={K} mob={mob} db={db} uid={uid} user={u} mods={mods} ok={ok} onSub={onSub} onGo={onGo}/>
+    <MesAttestations K={K} mob={mob} db={db} uid={uid} user={u} mods={mods} ok={abonne??ok} onSub={onSub} onGo={onGo}/>
     <div className="tn" style={{gap:6,margin:"18px 0 12px",paddingBottom:3}}>
       {ONGLETS.map(([k,ico,l])=>{const a=onglet===k;return <button key={k} onClick={()=>sOnglet(k)} className="bt" style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",borderRadius:99,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:a?800:600,flexShrink:0,background:a?`linear-gradient(135deg,${K.emD},${K.em})`:K.card,color:a?"#fff":K.t2,border:a?"1px solid transparent":`1px solid ${K.b0}`}}>
         <i className={`ti ti-${ico}`} style={{fontSize:15,color:a?"#fff":K.t3}}/>{l}<span style={{fontSize:11.5,opacity:.8}}>{nFaits(k)}/{L[k].length}</span></button>;})}
@@ -4682,6 +4703,7 @@ function AA({onOut}){
           {k:"ac",ico:"ticket",         label:"Tarifs et codes offerts",col:"#0D7A6B"},
           {k:"att",ico:"certificate",   label:"Attestations",   col:"#B7791F"},
           {k:"obs",ico:"eye",           label:"Accès lecture",  col:"#1E4FA3"},
+          {k:"essai",ico:"gift",        label:"Essai et parrainage",col:"#B7791F"},
           {k:"nt",ico:"bell",           label:"Notifications",col:"#1E4FA3"},
           {k:"sg",ico:"bulb",           label:"Suggestions",    badge:nSugg, col:"#C98A1B"},
           {k:"msg",ico:"message-circle",label:"Messages",       badge:allMessages.filter(m=>!m.formateurUid&&m.fromRole==="apprenant"&&!m.luAdmin).length, col:"#BE123C"},
@@ -5358,6 +5380,7 @@ function AA({onOut}){
     {tab==="eduf"&&<Eduf K={K} mob={mob} apercu/>}
     {tab==="parcs"&&<ParcsRdc K={K} mob={mob} apercu/>}
     {tab==="obs"&&<Observateurs K={K} mob={mob} db={db} users={users}/>}
+    {tab==="essai"&&<AdminEssai K={K} mob={mob} db={db} users={users}/>}
     {tab==="pl"&&(()=>{
       const apprs=users.filter(u=>u.role!=="formateur"&&u.mail!==ADM_EMAIL);
       const day=plAll.find(p=>p.id===plDate);
