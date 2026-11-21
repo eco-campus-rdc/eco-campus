@@ -47,7 +47,8 @@ import MesAttestations from"./attest/MesAttestations";
 import{SEUIL_ELEMENT,EXAMENS,etatParcours}from"./attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"./parcours/ExamenFinal";
 import MesFormations from"./parcours/MesFormations";
-import Objectifs from"./parcours/Objectifs";
+import Objectifs,{ObjectifsModule}from"./parcours/Objectifs";
+import{objectifsModule,OBJECTIFS_MODULES}from"./parcours/objectifsModules";
 import{GROUPES_APPRENANT,GROUPES_ADMIN,groupeDe,normaliserVue,badgeGroupe,VUES_ADMIN}from"./nav/navigation";
 import{MODULES_FISC}from"./fiscal/modules";
 import{MODULES_FIN}from"./finance/modules";
@@ -348,6 +349,8 @@ const saveProgress=async(uid,modId,score)=>{
   await runTransaction(db,async tx=>{const d=await tx.get(ref);const ancien=((d.data()||{}).scores||{})[modId];
     tx.update(ref,{[`scores.${modId}`]:fusionScore(ancien,{s:score.s,t:score.t}),[`progress.${modId}`]:"done"});});
 };
+// Objectifs saisis dans l'éditeur : rien n'est stocké s'ils reprennent les objectifs standard du code (M01…)
+const objectifsSaisis=(txt,code)=>{const v=String(txt||"").split("\n").map(s=>s.trim()).filter(Boolean).join("\n");return v===(OBJECTIFS_MODULES[code]||[]).join("\n")?"":v;};
 const saveModule=async(mod)=>{
   const{id,...data}=mod;
   const flat=flattenMod(data);
@@ -3648,6 +3651,7 @@ function MV({mod,sc,ok,onQ,onOpenQ,onMarkDone,doneNoEval,openAnswer,onBack,onSub
       <div style={{marginBottom:10}}><LecteurAudio K={K} segments={segsAudio} titre={ok&&ex?"Écouter le module et l'exercice":"Écouter le module"}/></div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[["❓",`${mod.q?.length||0}q`],["📝","Exercice"],vids.length>0?["🎬",`${vids.length} vid.`]:null,pdf?["📄","PDF"]:null].filter(Boolean).map(([ic,v])=><div key={v} style={{background:K.c2,border:`1px solid ${K.b0}`,borderRadius:7,padding:"4px 9px",fontSize:12,color:K.t2,display:"flex",alignItems:"center",gap:3}}>{ic} {v}</div>)}</div>
     </div>
+    <ObjectifsModule K={K} mod={mod}/>
     {sc&&ok&&<div style={{background:sc.pct>=SEUIL_ELEMENT?K.emBg:K.erBg,border:`1px solid ${sc.pct>=SEUIL_ELEMENT?K.emBd:K.erBd}`,borderRadius:11,padding:"10px 13px",marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{color:K.t2,fontSize:14}}>Dernier résultat</span><span style={{color:sc.pct>=SEUIL_ELEMENT?K.em:K.er,fontWeight:700,fontSize:14}}>{sc.s}/{sc.t} — {sc.pct}%</span></div><Bar p={sc.pct} col={sc.pct>=SEUIL_ELEMENT?K.em:K.er} h={4}/></div>}
     {vids.length>0&&<div style={{background:K.card,border:`1px solid ${K.rdBd}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}><div style={{padding:"11px 13px",borderBottom:`1px solid ${K.b0}`,display:"flex",alignItems:"center",gap:7}}><span>🎬</span><span style={{fontWeight:700,fontSize:14,color:K.t1}}>Vidéos</span><Tg c={K.rd} bg={K.rdBg} bd={K.rdBd} ch={`${vids.length}`}/></div><div style={{padding:"9px 11px",display:"flex",flexDirection:"column",gap:6}}>{vids.map(v=>{const lk=!v.gr&&!ok;const pv=pVid(v.url);return <div key={v.id} onClick={()=>lk?onSub():(sPlIdx(vids.indexOf(v)),sPl({url:v.url,titre:v.titre}))} className="bt" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 11px",background:K.c2,borderRadius:9,cursor:"pointer",border:`1px solid ${K.b0}`,opacity:lk?.7:1}}><div style={{width:34,height:26,borderRadius:6,background:"rgba(0,0,0,.3)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>{pv?.t==="yt"?<img src={`https://img.youtube.com/vi/${pv.id}/default.jpg`} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:13}}>{lk?"🔒":"▶"}</span>}</div><div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,color:lk?K.t3:K.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.titre}</div></div>{v.gr?<Tg c={K.em} bg={K.emBg} bd={K.emBd} ch="Gratuit"/>:<Tg c={K.wa} bg={K.waBg} bd={K.waBd} ch="Premium"/>}</div>;})} </div></div>}
     {ex&&<div style={{background:K.card,border:`1px solid ${exO?K.inBd:K.b0}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
@@ -4523,13 +4527,14 @@ function AA({onOut}){
     const isNew=!mod.id;const[qs,sQs]=useState(mod.q?JSON.parse(JSON.stringify(mod.q)):[{q:"",r:["","","",""],b:0}]);
     const[ex,sEx]=useState(mod.ex?JSON.parse(JSON.stringify(mod.ex)):{ti:"",en:"",tv:[""],dn:[],co:""});
     const[ico,sIco]=useState(mod.ico||"📚");const[col,sCol]=useState(mod.col||COLS[0]);const[on,sOn]=useState(mod.on!==false);
-    const rT=useRef(),rD=useRef(),rM=useRef(),rC=useRef();
-    const save=async()=>{const titre=rT.current?.value?.trim()||"";const code=rC.current?.value?.trim()||"";if(!titre||!code){alert("Titre et Code requis");return;}sSav(true);const vq=qs.filter(q=>q.q.trim()&&q.r.filter(r=>r.trim()).length>=2);await saveModule({id:mod.id,code,ico,col,titre,desc:rD.current?.value?.trim()||"",mat:rM.current?.value?.trim()||"Général",on,q:vq,ex,ordre:mod.ordre||Date.now()});sSav(false);onSave();};
+    const rT=useRef(),rD=useRef(),rM=useRef(),rC=useRef(),rO=useRef();
+    const save=async()=>{const titre=rT.current?.value?.trim()||"";const code=rC.current?.value?.trim()||"";if(!titre||!code){alert("Titre et Code requis");return;}sSav(true);const vq=qs.filter(q=>q.q.trim()&&q.r.filter(r=>r.trim()).length>=2);await saveModule({id:mod.id,code,ico,col,titre,desc:rD.current?.value?.trim()||"",mat:rM.current?.value?.trim()||"Général",on,q:vq,ex,objectifs:objectifsSaisis(rO.current?.value,code),ordre:mod.ordre||Date.now()});sSav(false);onSave();};
     return <div style={{animation:"sc .2s ease"}}>
       <div style={{fontFamily:"'Fraunces',serif",fontWeight:700,fontSize:21,letterSpacing:"-.3px",lineHeight:1.2,color:K.t1,marginBottom:12}}>{isNew?"➕ Nouveau module":"✏️ Modifier"}</div>
       <div style={{background:K.c2,borderRadius:11,padding:"13px",marginBottom:12}}>
         <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}><div style={{flex:"0 0 100px"}}><Inp lb="Code *" rf={rC} ph="M11" def={mod.code||""}/></div><div style={{flex:1,minWidth:140}}><Inp lb="Titre *" rf={rT} ph="Nom du cours" def={mod.titre||""}/></div></div>
         <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}><div style={{flex:1,minWidth:120}}><Inp lb="Matière" rf={rM} ph="SYSCOHADA, Droit..." def={mod.mat||""}/></div><div style={{flex:1,minWidth:140}}><Inp lb="Description" rf={rD} ph="Résumé court" def={mod.desc||""}/></div></div>
+        <Inp lb="Objectifs du module" rf={rO} rows={4} ph={"Calculer…\nComptabiliser…\nExpliquer…"} def={objectifsModule(mod).join("\n")} note="Un objectif par ligne, commençant par un verbe d'action. Affichés en tête de la leçon."/>
         <div style={{marginBottom:10}}><div style={{color:K.t2,fontSize:13,fontWeight:600,marginBottom:6}}>Icône</div><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{ICOS.map(i=><button key={i} onClick={()=>sIco(i)} className="bt" style={{width:34,height:34,borderRadius:8,background:ico===i?K.emBg:K.bg,border:`1px solid ${ico===i?K.emBd:K.b0}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{icoEl(i,ico===i?K.em:K.t2,16)}</button>)}</div></div>
         <div style={{marginBottom:10}}><div style={{color:K.t2,fontSize:13,fontWeight:600,marginBottom:6}}>Couleur</div><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{COLS.map(c=><button key={c} onClick={()=>sCol(c)} className="bt" style={{width:26,height:26,borderRadius:"50%",background:c,border:`2px solid ${col===c?"#fff":"transparent"}`,cursor:"pointer"}}/>)}</div></div>
         <div style={{display:"flex",alignItems:"center",gap:10}}><span style={{color:K.t2,fontSize:14,fontWeight:600}}>Actif</span><button onClick={()=>sOn(a=>!a)} className="bt" style={{width:42,height:22,borderRadius:99,background:on?K.em:K.c2,border:`1px solid ${on?K.emBd:K.b0}`,position:"relative",cursor:"pointer",transition:"background .2s"}}><span style={{position:"absolute",top:2,left:on?20:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s",display:"block"}}/></button><span style={{fontSize:13,color:on?K.em:K.t3}}>{on?"Visible":"Masqué"}</span></div>

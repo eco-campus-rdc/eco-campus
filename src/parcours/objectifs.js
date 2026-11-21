@@ -11,13 +11,14 @@ export const OBJECTIFS = {
   "SYS-N1": {
     general: "Acquérir les bases de la comptabilité générale selon le SYSCOHADA révisé et enregistrer correctement les opérations courantes d'une entreprise.",
     competences: [
-      "Expliquer les principes comptables du SYSCOHADA révisé : partie double, prudence, permanence des méthodes, continuité d'exploitation.",
-      "Se repérer dans le plan de comptes à neuf classes et imputer chaque opération au bon compte.",
-      "Passer au journal les écritures courantes : achats, ventes, règlements, banque et caisse.",
-      "Comptabiliser la TVA facturée et la TVA récupérable, puis déterminer la TVA à payer.",
-      "Enregistrer la paie : salaire brut, retenues, charges sociales et règlement.",
-      "Calculer et comptabiliser les amortissements des immobilisations.",
-      "Réaliser les opérations de clôture et lire un bilan et un compte de résultat.",
+      "Expliquer le cadre OHADA et les principes comptables du SYSCOHADA révisé.",
+      "Passer les écritures au journal, les reporter au grand livre et établir la balance.",
+      "Classer les comptes dans les neuf classes du plan et présenter un bilan.",
+      "Calculer les soldes intermédiaires de gestion et présenter le compte de résultat.",
+      "Comptabiliser la TVA et la liquider chaque mois.",
+      "Enregistrer achats, ventes, réductions, règlements et effets de commerce.",
+      "Comptabiliser la paie, les amortissements, les cessions, les provisions et les dépréciations.",
+      "Passer les écritures de régularisation, établir les états financiers et affecter le résultat.",
     ],
   },
   "SYS-N2": {
