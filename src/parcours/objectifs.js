@@ -95,6 +95,19 @@ export const OBJECTIFS = {
       "Faire fructifier son épargne et préparer ses projets et sa retraite.",
     ],
   },
+  ETHIQ: {
+    general: "Reconnaître les questions éthiques de la vie quotidienne, professionnelle et publique, et prendre des décisions justes que l'on peut défendre devant les autres.",
+    competences: [
+      "Distinguer éthique, morale, déontologie et droit, et appliquer les tests du journal, du miroir et de la règle générale.",
+      "Reconnaître un vrai dilemme et le résoudre avec une méthode en sept étapes.",
+      "Analyser une décision avec plusieurs grilles : conséquences, devoir, vertus, care et Ubuntu.",
+      "Repérer la corruption, le favoritisme et les conflits d'intérêts, et savoir y réagir.",
+      "Appliquer les principes et les sauvegardes du code de déontologie des professionnels comptables (IESBA).",
+      "Signaler une faute grave par les bons canaux, dans le respect de la confidentialité et des personnes.",
+      "Exiger et pratiquer la redevabilité dans la gestion du bien commun.",
+      "Raisonner sur les dilemmes du numérique, de la santé et de l'environnement.",
+    ],
+  },
   DTRAV: {
     general: "Connaître et appliquer le Code du travail congolais, à jour de la réforme de 2016, du côté du travailleur comme de l'employeur.",
     competences: [

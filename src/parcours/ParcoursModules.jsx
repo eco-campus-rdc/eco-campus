@@ -10,7 +10,8 @@ import{useLecture,dureeMinLecture,FinLecon,allerFinLecon}from"./lecture";
 // ══════════════════ PAGE D'UN PARCOURS À MODULES (SYCEBNL, comptabilité bancaire…) ══════════════════
 // Chemin vertical : modules ouverts dans l'ordre (le suivant à SEUIL_ELEMENT %, acquis conservés), leçon en blocs, schémas,
 // narration audio et évaluation (séries de NB_Q), puis examen final (EXAMENS[id], coefficient 2) et certificat avec relevé.
-// cfg : { id, modules, cle(idModule), audio(mod), nom, hero: { fond, ico, kicker, titre, texte }, libre, libreTexte?, source }
+// cfg : { id, modules, cle(idModule), audio(mod), nom, hero: { fond, ico, kicker, titre, texte }, libre, libreTexte?, source, niveaux? }
+// niveaux (facultatif) : [{ id, label, n, col, ico, d }] ; chaque module porte alors mod.niveau et la liste est regroupée par niveau.
 // apercu : administrateur ou formateur, tout est ouvert.
 const NB_Q=10;
 
@@ -19,6 +20,7 @@ const Pastille=({K,pct})=>{if(pct==null)return null;const ok=pct>=SEUIL_ELEMENT;
 
 export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},ok,onSub,onGo,apercu=false}){
   const MODS=cfg.modules,X=EXAMENS[cfg.id],CLE_F=X.cle;
+  const niv=m=>cfg.niveaux&&m&&cfg.niveaux.find(n=>n.id===m.niveau);
   const[open,sOpen]=useState(null),[mode,sMode]=useState("lecon"),[loc,sLoc]=useState({});
   const tous=useMemo(()=>({...scores,...loc}),[scores,loc]);
   const etat=useMemo(()=>etatParcours(cfg.id,[],{scores:tous}),[tous,cfg.id]);
@@ -51,7 +53,7 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
       {retour}
       <div style={{background:`linear-gradient(135deg,${mod.col},${mod.col}CC)`,borderRadius:18,padding:mob?"18px 16px":"22px 24px",color:"#fff",marginBottom:14,position:"relative",overflow:"hidden"}}>
         <i className={`ti ti-${mod.ico}`} style={{position:"absolute",right:-8,bottom:-16,fontSize:110,opacity:.12}}/>
-        <div style={{fontSize:12,fontWeight:800,letterSpacing:1,opacity:.85,textTransform:"uppercase"}}>Module {idx+1} / {MODS.length} · {mod.duree}</div>
+        <div style={{fontSize:12,fontWeight:800,letterSpacing:1,opacity:.85,textTransform:"uppercase"}}>Module {idx+1} / {MODS.length} · {mod.duree}{niv(mod)?` · Niveau ${niv(mod).n} : ${niv(mod).label}`:""}</div>
         <div style={{fontFamily:"'Fraunces',serif",fontWeight:800,fontSize:mob?22:27,lineHeight:1.2,margin:"4px 0 6px"}}>{mod.titre}</div>
         <div style={{fontSize:14,opacity:.9,lineHeight:1.5}}>{mod.resume}</div>
         <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
@@ -105,7 +107,13 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
       {MODS.map((m,i)=>{const e=em(m.id),lkAbo=!abonne(m),lkParc=!ouvertParcours(m),lk=lkAbo||lkParc;
         const etatIco=e.reussi?"circle-check":lk?"lock":e.pct!=null?"alert-circle":"player-play";
         const colI=e.reussi?K.em:lk?K.t3:e.pct!=null?K.er:m.col;
-        return <div key={m.id} style={{display:"flex",gap:12,alignItems:"stretch"}}>
+        const N=niv(m),nouveauNiveau=N&&(i===0||MODS[i-1].niveau!==m.niveau);
+        return <React.Fragment key={m.id}>{nouveauNiveau&&<div style={{display:"flex",alignItems:"center",gap:10,margin:i?"10px 0 10px":"0 0 10px"}}>
+          <div style={{width:34,height:34,borderRadius:10,background:N.col,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:900}}><i className={`ti ti-${N.ico}`} style={{fontSize:18}}/></div>
+          <div style={{minWidth:0}}><div style={{fontSize:12,fontWeight:800,color:N.col,letterSpacing:.7,textTransform:"uppercase"}}>Niveau {N.n} · {N.label}</div><div style={{fontSize:13,color:K.t3}}>{N.d}</div></div>
+          <div style={{flex:1,height:2,background:`${N.col}30`,borderRadius:2}}/>
+        </div>}
+        <div style={{display:"flex",gap:12,alignItems:"stretch"}}>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:34,flexShrink:0}}>
             <div style={{width:34,height:34,borderRadius:"50%",background:e.reussi?K.emBg:lk?K.c2:`${m.col}18`,border:`2px solid ${colI}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><i className={`ti ti-${etatIco}`} style={{fontSize:17,color:colI}}/></div>
             <div style={{flex:1,width:2,background:e.reussi?K.em:K.b1,minHeight:12}}/>
@@ -125,7 +133,7 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
               {lkAbo&&<span style={{color:K.wa,fontWeight:700}}><i className="ti ti-lock" style={{marginRight:3}}/>Accès abonné</span>}
             </div>
           </div>
-        </div>;})}
+        </div></React.Fragment>;})}
       {/* Examen final */}
       <div style={{display:"flex",gap:12,alignItems:"stretch"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:34,flexShrink:0}}>

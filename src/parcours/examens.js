@@ -5,13 +5,15 @@
 // - SYS-N2 : examen pratique « quelle écriture ? » construit à partir des écritures types du guide des comptes ;
 // - SYCEBNL : banque dédiée (src/sycebnl/examen.js) ;
 // - EDUF : banque formée des QCM des 8 modules d'éducation financière ;
-// - DTRAV : banque formée des QCM des 6 modules de droit du travail.
+// - DTRAV : banque formée des QCM des 6 modules de droit du travail ;
+// - ETHIQ : banque formée des QCM des 8 modules d'éthique (tous les niveaux).
 import { MODULES_FISC } from "../fiscal/modules";
 import { MODULES_FIN } from "../finance/modules";
 import { EXAMEN_SYC } from "../sycebnl/examen";
 import { BANQUE_BQ } from "../banque/examen";
 import { MODULES_EDUF } from "../eduf/modules";
 import { MODULES_DT } from "../travail/modules";
+import { MODULES_ETH } from "../ethique/modules";
 import { enonce } from "../ef/syscohada/exercice";
 
 const avecModule = mods => mods.flatMap(m => m.qcm.map(q => ({ ...q, m: m.id })));
@@ -106,4 +108,5 @@ export const EXAMENS_FINAUX = {
   SYCEBNL: { titre: EXAMEN_SYC.titre, col: EXAMEN_SYC.col, charger: () => EXAMEN_SYC.qcm },
   EDUF: { titre: "Examen final — Éducation financière", col: "#15803D", charger: () => avecModule(MODULES_EDUF) },
   DTRAV: { titre: "Examen final — Droit du travail en RDC", col: "#7C3AED", charger: () => avecModule(MODULES_DT) },
+  ETHIQ: { titre: "Examen final — Questions et dilemmes éthiques", col: "#B91C1C", charger: () => avecModule(MODULES_ETH) },
 };
