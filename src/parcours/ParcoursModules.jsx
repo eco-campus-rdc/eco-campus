@@ -4,7 +4,7 @@ import{Bloc,Qcm,Carte,Bouton}from"../fiscal/CodeImpots";
 import{ExamenFinal}from"./ExamenFinal";
 import{SEUIL_ELEMENT,SEUIL_MOYENNE,COEF_FINAL,EXAMENS,etatParcours}from"../attest/regles";
 import{LIB_ACCES}from"../acces/plateforme";
-import Objectifs from"./Objectifs";
+import Objectifs,{ObjectifsModule}from"./Objectifs";
 
 // ══════════════════ PAGE D'UN PARCOURS À MODULES (SYCEBNL, comptabilité bancaire…) ══════════════════
 // Chemin vertical : modules ouverts dans l'ordre (le suivant à SEUIL_ELEMENT %, acquis conservés), leçon en blocs, schémas,
@@ -58,6 +58,7 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},ok,onSub,onG
         </div>
       </div>
       {mode==="lecon"&&<>
+        <ObjectifsModule K={K} mod={mod}/>
         <div style={{marginBottom:14}}><LecteurAudio K={K} segments={segs} titre="Écouter le cours"/></div>
         {mod.blocs.map((b,i)=><Bloc key={i} K={K} b={b} col={mod.col}/>)}
         <div style={{display:"flex",justifyContent:"center",margin:"6px 0 18px"}}>

@@ -1,10 +1,12 @@
 import React,{useState}from"react";
 import{OBJECTIFS,INTRO_OBJECTIFS}from"./objectifs";
+import{objectifsModule,INTRO_MODULE}from"./objectifsModules";
 
 // ══════════════════ OBJECTIFS DE LA FORMATION ══════════════════
 // Carte affichée sous l'en-tête de chaque parcours : objectif général, puis ce que l'apprenant saura faire.
 // Repliée, elle montre les NB_VISIBLES premières compétences et un bouton pour tout afficher.
 // compact (carte de « Mes formations ») : un simple lien « Objectifs de la formation » qui déplie la liste.
+// ObjectifsModule : les objectifs d'un module, en tête de sa leçon.
 const NB_VISIBLES=3;
 
 const Liste=({K,col,items})=><ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:7}}>
@@ -39,5 +41,20 @@ export default function Objectifs({K,id,col,compact=false,ouvert:ouvertInitial=f
     <div style={{fontSize:12.5,fontWeight:800,color:K.t3,letterSpacing:.4,textTransform:"uppercase",marginBottom:8}}>{INTRO_OBJECTIFS}</div>
     <Liste K={K} col={c} items={items}/>
     {n>NB_VISIBLES&&<div style={{marginTop:8}}>{bouton(ouvert?"Réduire":`Voir les ${n} objectifs`,ouvert?"chevron-up":"chevron-down")}</div>}
+  </section>;
+}
+
+// Objectifs d'un module, en tête de la leçon (3 lignes en général)
+export function ObjectifsModule({K,mod,col}){
+  const items=objectifsModule(mod);
+  if(!items.length)return null;
+  const c=col||mod.col||K.em;
+  return <section aria-label="Objectifs du module" style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:14,borderLeft:`4px solid ${c}`,padding:"12px 14px",marginBottom:14}}>
+    <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
+      <i className="ti ti-target-arrow" style={{fontSize:18,color:c}}/>
+      <span style={{fontWeight:800,fontSize:14.5,color:K.t1}}>Objectifs du module</span>
+    </div>
+    <div style={{fontSize:12.5,color:K.t3,marginBottom:8}}>{INTRO_MODULE}</div>
+    <Liste K={K} col={c} items={items}/>
   </section>;
 }

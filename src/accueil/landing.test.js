@@ -13,4 +13,6 @@ test("la page d'accueil publique présente tous les parcours certifiants, avec d
   expect(cat.find(c => c.id === "DTRAV").contenu).toBe("6 modules");
   // Éducation financière : 8 modules dont 3 gratuits (EF1 à EF3)
   expect(cat.find(c => c.id === "EDUF")).toMatchObject({ contenu: "8 modules", nLibres: 3 });
+  // Chaque carte annonce ce que l'apprenant saura faire
+  for (const c of cat) expect(c.objectifs.length).toBeGreaterThanOrEqual(6);
 });

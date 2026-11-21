@@ -10,7 +10,7 @@ import{SCHEMAS_PARCS}from"../parcs/CarteParcs";
 import{SCHEMAS_TRAVAIL}from"../travail/Simulateur";
 import{liquidationTVA}from"./tva";
 import{LIB_ACCES}from"../acces/plateforme";
-import Objectifs from"../parcours/Objectifs";
+import Objectifs,{ObjectifsModule}from"../parcours/Objectifs";
 import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"../parcours/ExamenFinal";
 import Etape from"../parcours/Etape";
@@ -362,6 +362,7 @@ export default function CodeImpots({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=
         </div>
       </div>
       {mode==="lecon"?<>
+        <ObjectifsModule K={K} mod={mod}/>
         <div style={{marginBottom:14}}><LecteurAudio K={K} segments={segsLecon} titre="Écouter la leçon"/></div>
         {mod.blocs.map((b,i)=><Bloc key={i} K={K} b={b} col={mod.col}/>)}
         <div style={{display:"flex",justifyContent:"center",margin:"6px 0 18px"}}><Bouton K={K} ico="checklist" ch="Passer le QCM du module" on={()=>sMode("qcm")} sx={{minWidth:240}}/></div>

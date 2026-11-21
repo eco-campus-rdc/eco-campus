@@ -5,7 +5,7 @@ import{Bloc,Qcm,Carte,Bouton}from"../fiscal/CodeImpots";
 import{MODULES_FIN}from"./modules";
 import{casParNum}from"./cas";
 import{LIB_ACCES}from"../acces/plateforme";
-import Objectifs from"../parcours/Objectifs";
+import Objectifs,{ObjectifsModule}from"../parcours/Objectifs";
 import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"../parcours/ExamenFinal";
 import Etape from"../parcours/Etape";
@@ -91,6 +91,7 @@ export default function FinanceEntreprise({K,mob,db,uid,scores={},ok,onSub,onGo,
         </div>
       </div>
       {mode==="lecon"&&<>
+        <ObjectifsModule K={K} mod={mod}/>
         <div style={{marginBottom:14}}><LecteurAudio K={K} segments={segs} titre="Écouter le cours"/></div>
         {mod.blocs.map((b,i)=><Bloc key={i} K={K} b={b} col={mod.col}/>)}
         <div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap",margin:"6px 0 18px"}}>

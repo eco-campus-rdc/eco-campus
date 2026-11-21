@@ -1,6 +1,7 @@
 import React,{useEffect,useState}from"react";
 import{PARCOURS,EXAMENS,SEUIL_ELEMENT,SEUIL_MOYENNE,elementsParcours}from"../attest/regles";
 import{FORMATIONS}from"../parcours/MesFormations";
+import{OBJECTIFS}from"../parcours/objectifs";
 
 // ══════════════════ PAGE D'ACCUEIL PUBLIQUE (visiteurs non connectés) ══════════════════
 // Présente le catalogue réel : les parcours certifiants (mêmes données que « Mes formations » et les certificats),
@@ -10,13 +11,14 @@ const NAVY="#0A2A5C",BLEU="#1E4FA3",ROUGE="#A3122A",OR="#F2A93B";
 const SERIF="'Fraunces',serif",SANS="'Outfit',sans-serif";
 
 // Catalogue affiché : une carte par parcours, avec le nombre d'éléments hors examen final
+// et ce que l'apprenant saura faire (les 3 premiers objectifs du parcours)
 export function catalogue(){
   return FORMATIONS.map(f=>{
     const p=PARCOURS.find(x=>x.id===f.id),x=EXAMENS[f.id];
     const n=elementsParcours(f.id,[]).filter(e=>!e.final).length;
     // SYS-N1 : ses modules de cours sont publiés en ligne (non comptés ici) ; SYS-N2 : exercices pratiques
     const contenu=f.id==="SYS-N1"?"Modules de cours":f.id==="SYS-N2"?`${n} exercices pratiques`:`${n} modules`;
-    return{...f,court:p.court,titre:p.titre,contenu,nbQ:x.nbQ,n};
+    return{...f,court:p.court,titre:p.titre,contenu,nbQ:x.nbQ,n,objectifs:OBJECTIFS[f.id].competences};
   });
 }
 const OUTILS=[
@@ -134,7 +136,12 @@ export default function Landing({K,mob,onLogin,logo,logoClair,sombre}){
               <span style={{fontSize:12,fontWeight:800,color:K.t2,background:K.c2,border:`1px solid ${K.b0}`,borderRadius:99,padding:"3px 10px",whiteSpace:"nowrap"}}>{i+1} · {c.niveau}</span>
             </div>
             <div style={{fontWeight:800,fontSize:17.5,color:K.t1,lineHeight:1.25}}>{c.court}</div>
-            <div style={{fontSize:14,color:K.t2,lineHeight:1.55,flex:1}}>{c.resume}</div>
+            <div style={{fontSize:14,color:K.t2,lineHeight:1.55}}>{c.resume}</div>
+            <span style={{display:"flex",flexDirection:"column",gap:6,width:"100%",flex:1}}>
+              <span style={{fontSize:12,fontWeight:800,color:K.t3,letterSpacing:.8,textTransform:"uppercase"}}>Vous saurez</span>
+              {c.objectifs.slice(0,3).map(o=><span key={o} style={{display:"flex",gap:7,alignItems:"flex-start",fontSize:13.5,color:K.t1,lineHeight:1.45}}><i className="ti ti-circle-check" style={{fontSize:16,color:sombre?"#4FD1B5":c.col,flexShrink:0,marginTop:1}}/><span>{o}</span></span>)}
+              {c.objectifs.length>3&&<span style={{fontSize:12.5,color:K.t3,paddingLeft:23}}>et {c.objectifs.length-3} autres objectifs</span>}
+            </span>
             <div style={{display:"flex",alignItems:"center",gap:"6px 12px",flexWrap:"wrap",fontSize:12.5,color:K.t3,fontWeight:700}}>
               <span style={{display:"inline-flex",alignItems:"center",gap:5}}><i className="ti ti-book-2" style={{fontSize:14}}/>{c.contenu}</span>
               <span style={{display:"inline-flex",alignItems:"center",gap:5}}><i className="ti ti-certificate" style={{fontSize:14}}/>Examen de {c.nbQ} questions</span>
