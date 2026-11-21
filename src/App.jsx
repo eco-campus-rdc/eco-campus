@@ -21,6 +21,8 @@ import{BandeauEssai,FinEssai,CarteParrainage}from"./essai/BandeauEssai";
 import{etatEssai,parrainDepuisUrl}from"./essai/essai";
 import PuzzleCarte from"./psycho/PuzzleCarte";
 import OuSeTrouve from"./psycho/OuSeTrouve";
+import{PSY_VISUELS,CATS_VISUELLES,decrire}from"./psycho/visuels";
+import Schema,{OptionDessin,estDessin}from"./psycho/Schema";
 import{NIVEAUX_CARTE,NIVEAUX_OU,libelleDuree}from"./psycho/puzzle";
 import{initNotif,notifier}from"./notif/notif";
 import Cloche from"./notif/Cloche";
@@ -2880,9 +2882,10 @@ const PSY_CATS=[
   {id:"calc",  label:"Calcul mental & problèmes",     ico:"calculator",     col:"#2DD4BF"},
   {id:"logv",  label:"Logique verbale",               ico:"abc",            col:"#F472B6"},
   {id:"att",   label:"Attention & observation",       ico:"eye",            col:"#94A3B8"},
+  ...CATS_VISUELLES,
 ];
 const psyNorm=v=>String(v??"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/,/g,".");
-const PSY_BANK=[
+const PSY_BANK_TEXTE=[
 // ───── DOMINOS & CARTES ─────
 {id:"do_f1",cat:"dominos",niv:"facile",q:"Série de dominos : 1-2, 3-4, 5-6, ?-? (valeurs de 0 à 6, en boucle)",opts:["0-1","6-0","1-2","2-3"],a:0,exp:"Après 6, on repasse à 0 : la suite continue 0-1."},
 {id:"do_f2",cat:"dominos",niv:"facile",libre:true,q:"Suite de dominos (valeurs 0 à 6) : 2, 3, 4, 5, … Quelle valeur suit ?",a:"6",exp:"Progression +1 : après 5 vient 6."},
@@ -3033,6 +3036,10 @@ const PSY_BANK=[
 {id:"an_e3",cat:"ang",niv:"expert",q:"Laquelle de ces phrases exprime un sens plutôt négatif (pas assez) ?",opts:["I have a few friends.","I have few friends.","I have some friends.","I have many friends."],a:1,exp:"« Few » (sans « a ») a une connotation négative : peu, pas assez. « A few » est positif : quelques-uns."},
 {id:"an_e4",cat:"ang",niv:"expert",q:"Que signifie le phrasal verb « to come across » ?",opts:["Traverser","Tomber sur, rencontrer par hasard","Revenir en arrière","Se rapprocher"],a:1,exp:"« To come across » signifie tomber sur quelque chose ou quelqu'un par hasard."},
 ];
+// Banque complète : questions écrites et questions dessinées (suites de figures, matrices, dominos, cartes, roues, engrenages…)
+const PSY_BANK=[...PSY_BANK_TEXTE,...PSY_VISUELS];
+// Entraînement « Suites et schémas » : questions dessinées seulement, 10 par série
+const PSY_SCHEMAS={n:10,dur:{facile:300,moyen:360,difficile:420,tresdiff:480,expert:540}};
 const psyShuffle=a=>{const x=a.slice();for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=x[i];x[i]=x[j];x[j]=t;}return x;};
 const psyFmt=s=>`${Math.floor(s/60)}:${String(Math.max(0,s%60)).padStart(2,"0")}`;
 const psyRelTime=ts=>{
@@ -3054,6 +3061,7 @@ function PsychoPage({uid,u}){
   const[hist,setHist]=useState([]);
   const[histLoading,setHistLoading]=useState(true);
   const savedRef=useRef(false);
+  const[mode,sMode]=useState("mixte"),[durTot,sDurTot]=useState(0); // mixte : test par niveau ; schemas : questions dessinées seulement
   const[carte,sCarte]=useState(null); // jeux de la carte de la RDC : { jeu: "puzzle" | "ou", niveau }
   // Résultat du puzzle : même collection que les QCM (psychoScores), niveau « carte-… »
   const enregistrerCarte=useCallback(async r=>{
@@ -3081,15 +3089,15 @@ function PsychoPage({uid,u}){
   const finish=useCallback(async(finalAns,finalTLeft)=>{
     if(savedRef.current)return;
     savedRef.current=true;
-    const lvl=PSY_LEVELS.find(l=>l.id===niv);
+    const lvl=PSY_LEVELS.find(l=>l.id===niv),sch=mode==="schemas";
     const sc=qs.reduce((s,q,i)=>s+((q.libre?psyNorm(finalAns[i])===psyNorm(q.a):finalAns[i]===q.a)?1:0),0);
     const pct=qs.length?Math.round(sc/qs.length*100):0;
     if(!uid)return;
     try{
       const ref=doc(collection(db,"psychoScores"));
-      await setDoc(ref,{uid,nom:u?.nom||"",mail:u?.mail||"",niveau:niv,niveauLabel:lvl?.label||niv,score:sc,total:qs.length,pct,dureeUtilisee:(lvl?.dur||0)-finalTLeft,ts:serverTimestamp()});
+      await setDoc(ref,{uid,nom:u?.nom||"",mail:u?.mail||"",niveau:sch?`schemas-${niv}`:niv,niveauLabel:sch?`Suites et schémas · ${lvl?.label||niv}`:lvl?.label||niv,score:sc,total:qs.length,pct,dureeUtilisee:durTot-finalTLeft,ts:serverTimestamp()});
     }catch(e){console.log("psycho save error",e);}
-  },[qs,niv,uid,u]);
+  },[qs,niv,uid,u,mode,durTot]);
 
   useEffect(()=>{
     if(phase!=="test")return;
@@ -3098,12 +3106,14 @@ function PsychoPage({uid,u}){
     return()=>clearInterval(t);
   },[phase,tLeft,ans,finish]);
 
-  const start=nivId=>{
-    const lvl=PSY_LEVELS.find(l=>l.id===nivId);
-    const pool=psyShuffle(PSY_BANK.filter(q=>q.niv===nivId));
-    const picked=pool.slice(0,Math.min(lvl.n,pool.length));
+  const start=(nivId,m=mode)=>{
+    const lvl=PSY_LEVELS.find(l=>l.id===nivId),sch=m==="schemas";
+    const pool=psyShuffle(PSY_BANK.filter(q=>q.niv===nivId&&(!sch||q.schema)));
+    const picked=pool.slice(0,Math.min(sch?PSY_SCHEMAS.n:lvl.n,pool.length));
+    const dur=sch?PSY_SCHEMAS.dur[nivId]:lvl.dur;
     savedRef.current=false;
-    setNiv(nivId);setQs(picked);setAns(new Array(picked.length).fill(null));setIdx(0);setTLeft(lvl.dur);setPhase("test");
+    sMode(m);sDurTot(dur);
+    setNiv(nivId);setQs(picked);setAns(new Array(picked.length).fill(null));setIdx(0);setTLeft(dur);setPhase("test");
   };
   const pick=oi=>setAns(a=>{const b=a.slice();b[idx]=oi;return b;});
   const next=()=>{
@@ -3130,12 +3140,12 @@ function PsychoPage({uid,u}){
         <i className="ti ti-brain" style={{fontSize:14}}/>AUTO-ÉVALUATION CHRONOMÉTRÉE
       </div>
       <div style={{fontSize:mob?22:27,fontWeight:900,color:K.t1,marginBottom:6}}>Tests psychotechniques</div>
-      <div style={{fontSize:14,color:K.t2,lineHeight:1.6,maxWidth:460,margin:"0 auto"}}>Choisissez votre niveau · 9 catégories : suites, logique, figures, dominos, calcul, français, anglais, attention… · QCM et réponses libres · 5 à 15 minutes</div>
+      <div style={{fontSize:14,color:K.t2,lineHeight:1.6,maxWidth:460,margin:"0 auto"}}>Choisissez votre niveau · {PSY_CATS.length} catégories : suites, matrices, figures, dominos et cartes, schémas de nombres, engrenages, calcul, français, anglais, attention… · QCM, schémas et réponses libres · 5 à 15 minutes</div>
     </div>
 
     {/* Tuiles de niveau */}
     <div style={{display:"grid",gridTemplateColumns:mob?"1fr 1fr":"repeat(5,1fr)",gap:mob?10:12,marginBottom:26}}>
-      {PSY_LEVELS.map(l=><div key={l.id} onClick={()=>start(l.id)} className="bt" style={{cursor:"pointer",padding:mob?"16px 12px":"20px 14px",borderRadius:14,background:K.card,border:`1px solid ${K.b1}`,textAlign:"center",position:"relative",overflow:"hidden"}}>
+      {PSY_LEVELS.map(l=><div key={l.id} onClick={()=>start(l.id,"mixte")} className="bt" style={{cursor:"pointer",padding:mob?"16px 12px":"20px 14px",borderRadius:14,background:K.card,border:`1px solid ${K.b1}`,textAlign:"center",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:0,left:0,width:"100%",height:3,background:l.col}}/>
         <div style={{width:40,height:40,borderRadius:11,background:`${l.col}1e`,border:`1px solid ${l.col}44`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}>
           <i className={`ti ti-${l.ico}`} style={{fontSize:19,color:l.col}}/>
@@ -3143,6 +3153,20 @@ function PsychoPage({uid,u}){
         <div style={{fontSize:14,fontWeight:800,color:K.t1,marginBottom:6}}>{l.label}</div>
         <div style={{fontSize:11,color:K.t3,fontWeight:600}}>{Math.round(l.dur/60)} min · {l.n} questions</div>
       </div>)}
+    </div>
+
+    {/* Entraînement « Suites et schémas » : questions dessinées uniquement */}
+    <div style={{background:K.card,border:`1px solid ${K.b1}`,boxShadow:K.sh,borderRadius:18,padding:mob?"16px 14px":"20px 22px",marginBottom:22,position:"relative",overflow:"hidden",borderTop:"4px solid #0EA5E9"}}>
+      <i className="ti ti-grid-dots" style={{position:"absolute",right:-8,bottom:-20,fontSize:130,opacity:.06,color:K.t1}}/>
+      <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:11.5,fontWeight:800,letterSpacing:.6,textTransform:"uppercase",background:"#0EA5E914",color:"#0284C7",border:"1px solid #0EA5E940",borderRadius:99,padding:"4px 10px"}}><i className="ti ti-sparkles"/>Nouveau · Raisonnement visuel</div>
+      <div style={{fontSize:mob?19:22,fontWeight:900,color:K.t1,margin:"8px 0 4px"}}>Suites et schémas</div>
+      <div style={{fontSize:13.5,color:K.t2,lineHeight:1.55,maxWidth:600,marginBottom:10}}>Séries de 10 questions dessinées : suites de figures, matrices à compléter, intrus et symétrie, dominos et cartes, roues, triangles et pyramides de nombres, engrenages.</div>
+      <div style={{display:"grid",gridTemplateColumns:mob?"1fr 1fr":"repeat(5,1fr)",gap:8}}>
+        {PSY_LEVELS.map(l=><button key={l.id} onClick={()=>start(l.id,"schemas")} className="bt" style={{textAlign:"left",background:K.c2,border:`1px solid ${K.b1}`,borderTop:`3px solid ${l.col}`,borderRadius:12,padding:"9px 11px",color:K.t1,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,fontWeight:800,fontSize:14}}><i className={`ti ti-${l.ico}`} style={{color:l.col}}/>{l.label}</div>
+          <div style={{fontSize:11.5,color:K.t3,marginTop:3,display:"flex",alignItems:"center",gap:4}}><i className="ti ti-clock" style={{fontSize:12}}/>{PSY_SCHEMAS.n} questions · {Math.round(PSY_SCHEMAS.dur[l.id]/60)} min</div>
+        </button>)}
+      </div>
     </div>
 
     {/* Jeux de la carte de la RDC : puzzle et « Où se trouve… ? », 4 niveaux chronométrés chacun */}
@@ -3198,7 +3222,7 @@ function PsychoPage({uid,u}){
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
         <div style={{flex:1}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,fontSize:12,fontWeight:700,color:K.t3}}>
-            <span>Question {idx+1} / {qs.length} · {curLvl?.label}</span>
+            <span>Question {idx+1} / {qs.length} · {mode==="schemas"?"Schémas · ":""}{curLvl?.label}</span>
             <span style={{color:ci.col}}>{ci.label}</span>
           </div>
           <Bar p={(idx+1)/qs.length*100} col={ci.col}/>
@@ -3210,8 +3234,9 @@ function PsychoPage({uid,u}){
       </div>
 
       <div style={{background:K.card,border:`1px solid ${K.b1}`,boxShadow:K.sh,borderRadius:16,padding:mob?"20px 18px":"26px 24px",marginBottom:14}}>
-        <div style={{fontSize:mob?16:18,fontWeight:700,color:K.t1,lineHeight:1.5,marginBottom:20}}>{q.q}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{fontSize:mob?16:18,fontWeight:700,color:K.t1,lineHeight:1.5,marginBottom:q.schema?14:20}}>{q.q}</div>
+        {q.schema&&<Schema K={K} s={q.schema}/>}
+        <div style={q.opts&&q.opts.some(estDessin)?{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}:{display:"flex",flexDirection:"column",gap:10}}>
           {q.libre?<div>
             <input value={typeof ans[idx]==="string"?ans[idx]:""} onChange={e=>{const v=e.target.value;setAns(a=>{const b=[...a];b[idx]=v;return b;});}} placeholder="Tapez votre réponse…"
               style={{width:"100%",background:K.c2,border:`1.5px solid ${ci.col}60`,borderRadius:11,padding:"13px 15px",color:K.t1,fontSize:15,fontFamily:"'Outfit',sans-serif",boxSizing:"border-box"}}/>
@@ -3221,7 +3246,7 @@ function PsychoPage({uid,u}){
             const sel=ans[idx]===oi;
             return <button key={oi} onClick={()=>pick(oi)} className="bt" style={{display:"flex",alignItems:"center",gap:12,padding:"13px 15px",borderRadius:11,border:`1.5px solid ${sel?ci.col:K.b0}`,background:sel?`${ci.col}18`:K.c2,cursor:"pointer",textAlign:"left",fontFamily:"'Outfit',sans-serif",transition:"all .15s"}}>
               <div style={{width:26,height:26,borderRadius:"50%",flexShrink:0,border:`1.5px solid ${sel?ci.col:K.b1}`,background:sel?ci.col:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:sel?"#071209":K.t3}}>{String.fromCharCode(65+oi)}</div>
-              <span style={{fontSize:14,fontWeight:600,color:K.t1}}>{o}</span>
+              {estDessin(o)?<span aria-label={decrire(o)} style={{display:"flex",flex:1,justifyContent:"center"}}><OptionDessin K={K} o={o}/></span>:<span style={{fontSize:14,fontWeight:600,color:K.t1}}>{o}</span>}
             </button>;
           })}
         </div>
@@ -3242,7 +3267,7 @@ function PsychoPage({uid,u}){
       <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><ProgressRing pct={pct} size={104} stroke={9} col={msgCol}/></div>
       <div style={{fontSize:22,fontWeight:900,color:K.t1,marginBottom:4}}>{score} / {qs.length} bonnes réponses</div>
       <div style={{fontSize:14,fontWeight:700,color:msgCol,marginBottom:2}}>{msg}</div>
-      <div style={{fontSize:13,color:K.t3}}>Niveau {curLvl?.label} · {psyFmt((curLvl?.dur||0)-tLeft)} utilisées</div>
+      <div style={{fontSize:13,color:K.t3}}>{mode==="schemas"?"Suites et schémas · ":""}Niveau {curLvl?.label} · {psyFmt(durTot-tLeft)} utilisées</div>
     </div>
 
     <div style={{fontSize:13,fontWeight:700,color:K.t3,letterSpacing:.5,textTransform:"uppercase",marginBottom:12,paddingLeft:2}}>Correction détaillée</div>
@@ -3259,11 +3284,12 @@ function PsychoPage({uid,u}){
               <div style={{fontSize:14,fontWeight:700,color:K.t1,lineHeight:1.4}}>{i+1}. {q.q}</div>
             </div>
           </div>
+          {q.schema&&<div style={{paddingLeft:28}}><Schema K={K} s={q.schema}/></div>}
           <div style={{fontSize:13,color:K.t2,paddingLeft:28,lineHeight:1.6}}>
             {given==null
               ?<div style={{color:K.wa}}>Sans réponse</div>
-              :!good&&<div>Votre réponse : <span style={{color:K.rd,fontWeight:700}}>{q.libre?(given||"—"):q.opts[given]}</span></div>}
-            <div>Bonne réponse : <span style={{color:K.em,fontWeight:700}}>{q.libre?q.a:q.opts[q.a]}</span></div>
+              :!good&&<div>Votre réponse : <span style={{color:K.rd,fontWeight:700}}>{q.libre?(given||"—"):decrire(q.opts[given])}</span></div>}
+            <div>Bonne réponse : <span style={{color:K.em,fontWeight:700}}>{q.libre?q.a:decrire(q.opts[q.a])}</span></div>
             <div style={{marginTop:4,color:K.t3,fontStyle:"italic"}}>{q.exp}</div>
           </div>
         </div>;
