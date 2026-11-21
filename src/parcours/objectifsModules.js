@@ -319,6 +319,48 @@ export const OBJECTIFS_MODULES = {
     "Organiser ses papiers pour protéger sa famille.",
   ],
 
+  // ── Éthique ──
+  ET1: [
+    "Distinguer éthique, morale, déontologie et droit.",
+    "Identifier les valeurs qui entrent en jeu dans une décision.",
+    "Appliquer les tests du journal, du miroir et de la règle générale.",
+  ],
+  ET2: [
+    "Distinguer un vrai dilemme d'une simple tentation.",
+    "Repérer les parties prenantes et les valeurs en conflit.",
+    "Résoudre un dilemme avec la méthode en sept étapes, en cherchant une troisième voie.",
+  ],
+  ET3: [
+    "Expliquer le conséquentialisme, la déontologie de Kant, l'éthique des vertus, le care et l'Ubuntu.",
+    "Analyser le dilemme du tramway et le dilemme de Heinz avec plusieurs grilles.",
+    "Situer un raisonnement dans les niveaux du développement moral de Kohlberg.",
+  ],
+  ET4: [
+    "Reconnaître la corruption, le détournement, le favoritisme et la concussion.",
+    "Décider s'il faut accepter ou refuser un cadeau.",
+    "Déclarer un conflit d'intérêts et se retirer de la décision.",
+  ],
+  ET5: [
+    "Appliquer les cinq principes fondamentaux du code de l'IESBA.",
+    "Identifier les cinq menaces et choisir les sauvegardes adaptées.",
+    "Résister à une pression pour « arranger » les comptes, en gardant une trace écrite.",
+  ],
+  ET6: [
+    "Respecter le secret professionnel et en connaître les limites.",
+    "Suivre l'escalier de l'alerte : faits, canal interne, autorité, public.",
+    "Distinguer l'alerte de bonne foi de la délation et des rumeurs.",
+  ],
+  ET7: [
+    "Expliquer la redevabilité : transparence, justification, contrôle et sanction.",
+    "Refuser un ordre manifestement illégal et demander un ordre écrit en cas de doute.",
+    "Faire passer le bien commun avant la famille, le clan ou la région dans une décision publique.",
+  ],
+  ET8: [
+    "Protéger les données personnelles : finalité, consentement et sécurité.",
+    "Vérifier une information avant de la partager et garder un humain responsable des décisions de l'IA.",
+    "Raisonner sur le consentement éclairé, le travail des enfants et les générations futures.",
+  ],
+
   // ── Droit du travail ──
   DT1: [
     "Définir le travailleur, l'employeur et le contrat de travail au sens du Code.",
