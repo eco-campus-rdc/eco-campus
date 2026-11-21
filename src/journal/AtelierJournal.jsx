@@ -3,6 +3,7 @@ import{doc,updateDoc}from"firebase/firestore";
 import*as ZAO from"./zao";
 import{verifier,corrigeComplet}from"./moteur";
 import{COMPTES}from"../ef/guide";
+import Objectifs from"../parcours/Objectifs";
 
 // ══════════════════ ATELIER « TENUE COMPTABLE » : du journal aux états financiers ══════════════════
 // L'apprenant passe chaque écriture ; l'application vérifie (comptes par racine, montants au franc près,
@@ -89,6 +90,7 @@ export default function AtelierJournal({K,mob,db,me,onBack,onEtats}){
       <div style={{height:8,background:"rgba(255,255,255,.2)",borderRadius:99,overflow:"hidden",margin:"14px 0 6px",maxWidth:420}}><div style={{width:`${nFait/total*100}%`,height:"100%",background:"#fff",borderRadius:99}}/></div>
       <div style={{fontSize:12.5,opacity:.9}}>{nFait} / {total} opérations traitées · {nOk} réussies sans le corrigé</div>
     </div>
+    <Objectifs K={K} id="SYS-N2"/>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
       <Bt K={K} ico="player-play" ch={nFait?"Continuer":"Commencer"} on={()=>ouvrir(reprendre<0?0:reprendre)}/>
       <Bt K={K} v="g" ico="table" ch="Bilan d'ouverture" on={()=>sVue("ouverture")}/>

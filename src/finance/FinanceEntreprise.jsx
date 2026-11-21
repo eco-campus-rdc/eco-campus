@@ -5,6 +5,7 @@ import{Bloc,Qcm,Carte,Bouton}from"../fiscal/CodeImpots";
 import{MODULES_FIN}from"./modules";
 import{casParNum}from"./cas";
 import{LIB_ACCES}from"../acces/plateforme";
+import Objectifs from"../parcours/Objectifs";
 import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"../parcours/ExamenFinal";
 import Etape from"../parcours/Etape";
@@ -122,6 +123,7 @@ export default function FinanceEntreprise({K,mob,db,uid,scores={},ok,onSub,onGo,
         <span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}><i className="ti ti-headphones" style={{marginRight:4}}/>Cours audio</span>
       </div>
     </div>
+    <Objectifs K={K} id="FIN"/>
     {!ok&&<div style={{display:"flex",alignItems:"center",gap:10,background:K.waBg,border:`1px solid ${K.waBd}`,borderRadius:14,padding:"11px 14px",marginBottom:14,flexWrap:"wrap"}}>
       <i className="ti ti-lock-open" style={{fontSize:18,color:K.wa}}/>
       <div style={{flex:1,minWidth:200,fontSize:13.5,color:K.t1,lineHeight:1.5}}>Le module <b>FE1</b> est en accès libre. Les modules FE2 à FE7 sont réservés aux apprenants disposant d'un accès actif.</div>

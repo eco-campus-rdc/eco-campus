@@ -1,6 +1,7 @@
 import React,{useMemo}from"react";
 import{PARCOURS,EXAMENS,SEUIL_ELEMENT,SEUIL_MOYENNE,etatParcours,evaluer}from"../attest/regles";
 import{LIB_ACCES}from"../acces/plateforme";
+import Objectifs from"./Objectifs";
 
 // ══════════════════ MES FORMATIONS : LES PARCOURS CERTIFIANTS ══════════════════
 // Une carte par parcours (même présentation pour tous) : niveau, durée, progression et bouton « prochaine étape »
@@ -92,6 +93,7 @@ export default function MesFormations({ K, mob, user, mods, ok, onGo, onExam, on
           </div>
           <div style={{ fontWeight: 800, fontSize: 15.5, color: K.t1, lineHeight: 1.3 }}>{p.titre}</div>
           <div style={{ fontSize: 13, color: K.t3, lineHeight: 1.5, flex: 1 }}>{f.resume}</div>
+          <Objectifs K={K} id={f.id} col={f.col} compact />
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: K.t2, marginBottom: 4 }}>
               <span>{fait} / {n + 1} étapes réussies</span><span>{ev.moyenne != null ? `moyenne ${ev.moyenne} %` : "pas encore de note"}</span>
