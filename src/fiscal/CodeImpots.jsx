@@ -10,6 +10,7 @@ import{SCHEMAS_PARCS}from"../parcs/CarteParcs";
 import{SCHEMAS_TRAVAIL}from"../travail/Simulateur";
 import{liquidationTVA}from"./tva";
 import{LIB_ACCES}from"../acces/plateforme";
+import Objectifs from"../parcours/Objectifs";
 import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"../parcours/ExamenFinal";
 import Etape from"../parcours/Etape";
@@ -384,6 +385,7 @@ export default function CodeImpots({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=
         {moy!=null&&<span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}>Score moyen : {moy} %</span>}
       </div>
     </div>
+    <Objectifs K={K} id="FISC"/>
     <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:13,color:K.t2,lineHeight:1.55,marginBottom:12}}><i className="ti ti-route" style={{fontSize:17,color:K.em,marginTop:1}}/><span>Parcours certifiant : chaque module s'ouvre quand le précédent est réussi à {SEUIL_ELEMENT} %. Avec une moyenne d'au moins 80 %, passez l'examen final pour obtenir votre <b>certificat</b> et son <b>relevé de notes</b>.</span></div>
     {!ok&&<div style={{display:"flex",alignItems:"center",gap:10,background:K.waBg,border:`1px solid ${K.waBd}`,borderRadius:14,padding:"11px 14px",marginBottom:14,flexWrap:"wrap"}}>
       <i className="ti ti-lock-open" style={{fontSize:18,color:K.wa}}/>

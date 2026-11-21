@@ -47,6 +47,7 @@ import MesAttestations from"./attest/MesAttestations";
 import{SEUIL_ELEMENT,EXAMENS,etatParcours}from"./attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"./parcours/ExamenFinal";
 import MesFormations from"./parcours/MesFormations";
+import Objectifs from"./parcours/Objectifs";
 import{GROUPES_APPRENANT,GROUPES_ADMIN,groupeDe,normaliserVue,badgeGroupe,VUES_ADMIN}from"./nav/navigation";
 import{MODULES_FISC}from"./fiscal/modules";
 import{MODULES_FIN}from"./finance/modules";
@@ -3768,6 +3769,7 @@ function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo}){
         <div className="h-sec" style={{color:K.t1}}>SYSCOHADA · Niveau 1 : modules de cours <span style={{color:K.t3,fontWeight:500,fontSize:15,fontFamily:"'Outfit',sans-serif"}}>({fil.length})</span></div>
         {!ok&&<Tg c={K.wa} bg={K.waBg} bd={K.waBd} ch="🔒 Abonnement requis"/>}
       </div>
+      <Objectifs K={K} id="SYS-N1"/>
       <div style={{position:"relative",marginBottom:11}}>
         <i className="ti ti-search" style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:14,color:K.t3}}/>
         <input value={modQ} onChange={e=>sModQ(e.target.value)} placeholder="Rechercher un module…"

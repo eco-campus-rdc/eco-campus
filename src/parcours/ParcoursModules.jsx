@@ -4,6 +4,7 @@ import{Bloc,Qcm,Carte,Bouton}from"../fiscal/CodeImpots";
 import{ExamenFinal}from"./ExamenFinal";
 import{SEUIL_ELEMENT,SEUIL_MOYENNE,COEF_FINAL,EXAMENS,etatParcours}from"../attest/regles";
 import{LIB_ACCES}from"../acces/plateforme";
+import Objectifs from"./Objectifs";
 
 // ══════════════════ PAGE D'UN PARCOURS À MODULES (SYCEBNL, comptabilité bancaire…) ══════════════════
 // Chemin vertical : modules ouverts dans l'ordre (le suivant à SEUIL_ELEMENT %, acquis conservés), leçon en blocs, schémas,
@@ -90,6 +91,7 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},ok,onSub,onG
         <span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}><i className="ti ti-headphones" style={{marginRight:4}}/>Cours audio</span>
       </div>
     </div>
+    <Objectifs K={K} id={cfg.id}/>
     {!ok&&!apercu&&<div style={{display:"flex",alignItems:"center",gap:10,background:K.waBg,border:`1px solid ${K.waBd}`,borderRadius:14,padding:"11px 14px",marginBottom:14,flexWrap:"wrap"}}>
       <i className="ti ti-lock-open" style={{fontSize:18,color:K.wa}}/>
       <div style={{flex:1,minWidth:200,fontSize:13.5,color:K.t1,lineHeight:1.5}}>{cfg.libreTexte||<>Le module <b>{cfg.libre}</b> est en accès libre.</>} Les autres modules, l'examen final et le certificat sont réservés aux apprenants disposant d'un accès actif.</div>
