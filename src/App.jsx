@@ -23,6 +23,7 @@ import PuzzleCarte from"./psycho/PuzzleCarte";
 import OuSeTrouve from"./psycho/OuSeTrouve";
 import{PSY_VISUELS,CATS_VISUELLES,decrire}from"./psycho/visuels";
 import Schema,{OptionDessin,estDessin}from"./psycho/Schema";
+import{tirerSerie,lirePrecedents,ecrirePrecedents}from"./psycho/serie";
 import{NIVEAUX_CARTE,NIVEAUX_OU,libelleDuree}from"./psycho/puzzle";
 import{initNotif,notifier}from"./notif/notif";
 import Cloche from"./notif/Cloche";
@@ -2885,6 +2886,7 @@ const PSY_CATS=[
   ...CATS_VISUELLES,
 ];
 const psyNorm=v=>String(v??"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/,/g,".");
+const psyBonne=(q,r)=>q.libre?psyNorm(r)===psyNorm(q.a):r===q.a;
 const PSY_BANK_TEXTE=[
 // ───── DOMINOS & CARTES ─────
 {id:"do_f1",cat:"dominos",niv:"facile",q:"Série de dominos : 1-2, 3-4, 5-6, ?-? (valeurs de 0 à 6, en boucle)",opts:["0-1","6-0","1-2","2-3"],a:0,exp:"Après 6, on repasse à 0 : la suite continue 0-1."},
@@ -3040,7 +3042,6 @@ const PSY_BANK_TEXTE=[
 const PSY_BANK=[...PSY_BANK_TEXTE,...PSY_VISUELS];
 // Entraînement « Suites et schémas » : questions dessinées seulement, 10 par série
 const PSY_SCHEMAS={n:10,dur:{facile:300,moyen:360,difficile:420,tresdiff:480,expert:540}};
-const psyShuffle=a=>{const x=a.slice();for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=x[i];x[i]=x[j];x[j]=t;}return x;};
 const psyFmt=s=>`${Math.floor(s/60)}:${String(Math.max(0,s%60)).padStart(2,"0")}`;
 const psyRelTime=ts=>{
   if(!ts?.seconds)return"";
@@ -3061,7 +3062,7 @@ function PsychoPage({uid,u}){
   const[hist,setHist]=useState([]);
   const[histLoading,setHistLoading]=useState(true);
   const savedRef=useRef(false);
-  const[mode,sMode]=useState("mixte"),[durTot,sDurTot]=useState(0); // mixte : test par niveau ; schemas : questions dessinées seulement
+  const[mode,sMode]=useState("mixte"),[durTot,sDurTot]=useState(0),[voir,sVoir]=useState(false); // mixte : test par niveau ; schemas : questions dessinées seulement
   const[carte,sCarte]=useState(null); // jeux de la carte de la RDC : { jeu: "puzzle" | "ou", niveau }
   // Résultat du puzzle : même collection que les QCM (psychoScores), niveau « carte-… »
   const enregistrerCarte=useCallback(async r=>{
@@ -3090,7 +3091,7 @@ function PsychoPage({uid,u}){
     if(savedRef.current)return;
     savedRef.current=true;
     const lvl=PSY_LEVELS.find(l=>l.id===niv),sch=mode==="schemas";
-    const sc=qs.reduce((s,q,i)=>s+((q.libre?psyNorm(finalAns[i])===psyNorm(q.a):finalAns[i]===q.a)?1:0),0);
+    const sc=qs.reduce((s,q,i)=>s+(psyBonne(q,finalAns[i])?1:0),0);
     const pct=qs.length?Math.round(sc/qs.length*100):0;
     if(!uid)return;
     try{
@@ -3108,11 +3109,13 @@ function PsychoPage({uid,u}){
 
   const start=(nivId,m=mode)=>{
     const lvl=PSY_LEVELS.find(l=>l.id===nivId),sch=m==="schemas";
-    const pool=psyShuffle(PSY_BANK.filter(q=>q.niv===nivId&&(!sch||q.schema)));
-    const picked=pool.slice(0,Math.min(sch?PSY_SCHEMAS.n:lvl.n,pool.length));
+    // Questions au hasard (celles de la série précédente en dernier recours), réponses permutées : voir psycho/serie.js
+    const pool=PSY_BANK.filter(q=>q.niv===nivId&&(!sch||q.schema)),test=`${m}-${nivId}`;
+    const picked=tirerSerie(pool,sch?PSY_SCHEMAS.n:lvl.n,lirePrecedents(test));
+    ecrirePrecedents(test,picked.map(q=>q.id));
     const dur=sch?PSY_SCHEMAS.dur[nivId]:lvl.dur;
     savedRef.current=false;
-    sMode(m);sDurTot(dur);
+    sMode(m);sDurTot(dur);sVoir(false);
     setNiv(nivId);setQs(picked);setAns(new Array(picked.length).fill(null));setIdx(0);setTLeft(dur);setPhase("test");
   };
   const pick=oi=>setAns(a=>{const b=a.slice();b[idx]=oi;return b;});
@@ -3123,7 +3126,7 @@ function PsychoPage({uid,u}){
   const prev=()=>{if(idx>0)setIdx(idx-1);};
   const backToLevels=()=>{setPhase("level");setNiv(null);setQs([]);setIdx(0);setAns([]);};
 
-  const score=qs.reduce((s,q,i)=>s+(ans[i]===q.a?1:0),0);
+  const score=qs.reduce((s,q,i)=>s+(psyBonne(q,ans[i])?1:0),0);
   const pct=qs.length?Math.round(score/qs.length*100):0;
   const curLvl=PSY_LEVELS.find(l=>l.id===niv);
   const catInfo=cid=>PSY_CATS.find(c=>c.id===cid)||{label:"—",col:K.em};
@@ -3268,12 +3271,20 @@ function PsychoPage({uid,u}){
       <div style={{fontSize:22,fontWeight:900,color:K.t1,marginBottom:4}}>{score} / {qs.length} bonnes réponses</div>
       <div style={{fontSize:14,fontWeight:700,color:msgCol,marginBottom:2}}>{msg}</div>
       <div style={{fontSize:13,color:K.t3}}>{mode==="schemas"?"Suites et schémas · ":""}Niveau {curLvl?.label} · {psyFmt(durTot-tLeft)} utilisées</div>
+      <div style={{display:"grid",gridTemplateColumns:mob?"1fr":"1fr 1fr",gap:10,marginTop:18}}>
+        <button onClick={()=>sVoir(v=>!v)} aria-expanded={voir} className="bt" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:7,padding:"12px",background:voir?K.c2:"transparent",border:`1.5px solid ${K.in_}`,borderRadius:11,color:K.in_,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer",minHeight:46}}>
+          <i className={`ti ti-${voir?"eye-off":"eye"}`} style={{fontSize:17}}/>{voir?"Masquer les réponses":`Voir les réponses${qs.length-score?` (${qs.length-score} erreur${qs.length-score>1?"s":""})`:""}`}</button>
+        <Btn ch="↻ Recommencer" on={()=>start(niv)} full sx={{padding:"12px",fontSize:14,minHeight:46}}/>
+      </div>
+      <div style={{fontSize:12,color:K.t3,marginTop:8,lineHeight:1.5}}><i className="ti ti-arrows-shuffle" style={{marginRight:4}}/>Nouvelle série : questions tirées au hasard, en évitant celles de cette série, et réponses dans un ordre différent.</div>
+      {!voir&&<button onClick={backToLevels} className="bt" style={{background:"none",border:"none",color:K.t2,fontSize:13.5,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",marginTop:10,padding:"6px"}}>← Autres tests</button>}
     </div>
 
+    {voir&&<>
     <div style={{fontSize:13,fontWeight:700,color:K.t3,letterSpacing:.5,textTransform:"uppercase",marginBottom:12,paddingLeft:2}}>Correction détaillée</div>
     <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:18}}>
       {qs.map((q,i)=>{
-        const good=q.libre?psyNorm(ans[i])===psyNorm(q.a):ans[i]===q.a;const given=ans[i];const ci=catInfo(q.cat);
+        const good=psyBonne(q,ans[i]);const given=ans[i];const ci=catInfo(q.cat);
         return <div key={q.id} style={{background:K.card,border:`1px solid ${good?K.emBd:K.rdBd}`,borderRadius:12,padding:"14px 16px"}}>
           <div style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8}}>
             <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,background:good?K.em:K.rd,display:"flex",alignItems:"center",justifyContent:"center",marginTop:1}}>
@@ -3300,6 +3311,7 @@ function PsychoPage({uid,u}){
       <button onClick={backToLevels} className="bt" style={{flex:1,padding:"13px",background:"transparent",border:`1px solid ${K.b1}`,borderRadius:11,color:K.t2,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer",minHeight:46}}>Autres niveaux</button>
       <div style={{flex:1}}><Btn ch="↻ Recommencer" on={()=>start(niv)} full sx={{padding:"13px",fontSize:14,minHeight:46}}/></div>
     </div>
+    </>}
   </div>;
 }
 
