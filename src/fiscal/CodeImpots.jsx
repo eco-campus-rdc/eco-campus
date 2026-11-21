@@ -11,6 +11,7 @@ import{SCHEMAS_TRAVAIL}from"../travail/Simulateur";
 import{liquidationTVA}from"./tva";
 import{LIB_ACCES}from"../acces/plateforme";
 import Objectifs,{ObjectifsModule}from"../parcours/Objectifs";
+import{useLecture,dureeMinLecture,FinLecon,allerFinLecon}from"../parcours/lecture";
 import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"../parcours/ExamenFinal";
 import Etape from"../parcours/Etape";
@@ -328,7 +329,7 @@ export function Qcm({K,mod,db,uid,ancien,onFin,cle=cleScore(mod.id),nbQ=NB_Q,seu
 // Parcours progressif : un module s'ouvre quand le précédent est réussi à SEUIL_ELEMENT % (ou s'il est déjà commencé) ;
 // examen final de 40 questions quand les 15 modules sont réussis avec une moyenne d'au moins 80 %.
 // apercu : administrateur ou formateur, tout est ouvert.
-export default function CodeImpots({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=false}){
+export default function CodeImpots({K,mob,db,uid,scores={},progress={},ok,onSub,onGo,apercu=false}){
   const[open,sOpen]=useState(null),[mode,sMode]=useState("lecon"),[loc,sLoc]=useState({});
   const tous=useMemo(()=>({...scores,...loc}),[scores,loc]);
   const sc=id=>tous[cleScore(id)];
@@ -336,6 +337,8 @@ export default function CodeImpots({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=
   const el=id=>etat.elements.find(e=>e.cle===cleScore(id));
   const mod=MODULES_FISC.find(m=>m.id===open);
   const segsLecon=useMemo(()=>mod?texteModuleFiscal(mod):[],[mod]);
+  const minLecture=useMemo(()=>dureeMinLecture(mod&&mod.blocs),[mod]);
+  const lect=useLecture({db,uid,cle:mod?cleScore(mod.id):null,progress,scores:tous,minSec:minLecture,libre:apercu});
   const acces=m=>apercu||ok||m.libre;
   const ouvertP=m=>apercu||el(m.id).ouvert;
   const aller=m=>{if(!acces(m)){onSub&&onSub();return;}if(!ouvertP(m))return;sOpen(m.id);sMode("lecon");};
@@ -356,8 +359,8 @@ export default function CodeImpots({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=
         <div style={{fontFamily:"'Fraunces',serif",fontWeight:800,fontSize:mob?22:27,lineHeight:1.2,margin:"4px 0 6px"}}>{mod.titre}</div>
         <div style={{fontSize:14,opacity:.9,lineHeight:1.5}}>{mod.resume}</div>
         <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
-          {[["lecon","book-2","Leçon"],["qcm","checklist",`QCM · ${Math.min(NB_Q,mod.qcm.length)} questions`]].map(([k,ic,l])=><button key={k} onClick={()=>sMode(k)} className="bt" style={{background:mode===k?"#fff":"rgba(255,255,255,.16)",color:mode===k?mod.col:"#fff",border:"1px solid rgba(255,255,255,.35)",borderRadius:99,padding:"7px 13px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-            <i className={`ti ti-${ic}`} style={{fontSize:14}}/>{l}</button>)}
+          {[["lecon","book-2","Leçon"],["qcm","checklist",`QCM · ${Math.min(NB_Q,mod.qcm.length)} questions`]].map(([k,ic,l])=><button key={k} onClick={()=>k==="qcm"&&!lect.lu?(mode==="lecon"?allerFinLecon():sMode("lecon")):sMode(k)} className="bt" style={{background:mode===k?"#fff":"rgba(255,255,255,.16)",color:mode===k?mod.col:"#fff",border:"1px solid rgba(255,255,255,.35)",borderRadius:99,padding:"7px 13px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",display:"flex",alignItems:"center",gap:5}}>
+            <i className={`ti ti-${k==="qcm"&&!lect.lu?"lock":ic}`} style={{fontSize:14}}/>{l}</button>)}
           {s&&<span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"7px 12px",fontWeight:800,fontSize:13}}>Meilleur score : {s.pct} %</span>}
         </div>
       </div>
@@ -365,8 +368,8 @@ export default function CodeImpots({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=
         <ObjectifsModule K={K} mod={mod}/>
         <div style={{marginBottom:14}}><LecteurAudio K={K} segments={segsLecon} titre="Écouter la leçon"/></div>
         {mod.blocs.map((b,i)=><Bloc key={i} K={K} b={b} col={mod.col}/>)}
-        <div style={{display:"flex",justifyContent:"center",margin:"6px 0 18px"}}><Bouton K={K} ico="checklist" ch="Passer le QCM du module" on={()=>sMode("qcm")} sx={{minWidth:240}}/></div>
-      </>:<Qcm key={mod.id} K={K} mod={mod} db={db} uid={uid} ancien={s} seuil={SEUIL_ELEMENT} onFin={(r,retour)=>{if(r)sLoc(l=>({...l,[cleScore(mod.id)]:r}));if(retour)sMode("lecon");}}/>}
+        <FinLecon K={K} lecture={lect} col={mod.col} libelle="Passer le QCM du module" onEval={()=>sMode("qcm")}/>
+      </>:!lect.lu?null:<Qcm key={mod.id} K={K} mod={mod} db={db} uid={uid} ancien={s} seuil={SEUIL_ELEMENT} onFin={(r,retour)=>{if(r)sLoc(l=>({...l,[cleScore(mod.id)]:r}));if(retour)sMode("lecon");}}/>}
       {mode==="qcm"&&s&&s.pct>=SEUIL_ELEMENT&&next&&<div style={{display:"flex",justifyContent:"center",margin:"0 0 14px"}}><Bouton K={K} ico="lock-open" ch={`Module suivant : ${next.id} · ${next.court}`} on={()=>aller(next)}/></div>}
       <div style={{display:"flex",justifyContent:"space-between",gap:8,marginBottom:20}}>
         {prev?<Bouton K={K} v="g" ico="arrow-left" ch={mob?prev.id:`${prev.id} · ${prev.court}`} on={()=>aller(prev)}/>:<span/>}

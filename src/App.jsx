@@ -48,6 +48,7 @@ import{SEUIL_ELEMENT,EXAMENS,etatParcours}from"./attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"./parcours/ExamenFinal";
 import MesFormations from"./parcours/MesFormations";
 import Objectifs,{ObjectifsModule}from"./parcours/Objectifs";
+import{useLecture,dureeMinLecture,FinLecon}from"./parcours/lecture";
 import{objectifsModule,OBJECTIFS_MODULES}from"./parcours/objectifsModules";
 import{GROUPES_APPRENANT,GROUPES_ADMIN,groupeDe,normaliserVue,badgeGroupe,VUES_ADMIN}from"./nav/navigation";
 import{MODULES_FISC}from"./fiscal/modules";
@@ -2825,7 +2826,7 @@ function UA({uid,onOut}){
   if(quiz)return W(<QZ mod={quiz} onDone={async(s,t)=>{await save(quiz.id,s,t);sQ(null);sM(null);sV("res");}} onBack={()=>sQ(null)}/>);
   if(openQuiz)return W(<OpenQuiz mod={openQuiz} uid={uid} uNom={uData.nom} onDone={()=>{sOpenQuiz(null);sM(null);sV("res");}} onBack={()=>sOpenQuiz(null)}/>,true);
   if(exam)return W(<ExamenFinal K={K} mob={mob} db={db} uid={uid} id={exam} ancien={sc[EXAMENS[exam].cle]} onRetour={()=>sExam(null)}/>);
-  if(mod)return W(<MV mod={mod} sc={sc[mod.id]} ok={ok} onQ={()=>sQ(mod)} onOpenQ={()=>sOpenQuiz(mod)} onMarkDone={()=>markDoneNoEval(mod.id)} doneNoEval={pr[mod.id]==="done"} openAnswer={myOpenAnswers.find(a=>a.modId===mod.id)} onBack={()=>sM(null)} onSub={()=>sSub(true)} vids={vids.filter(v=>v.mid===mod.id)} pdf={pdfs[mod.id]} uid={uid} uNom={uData.nom}/>,true);
+  if(mod)return W(<MV mod={mod} sc={sc[mod.id]} ok={ok} pr={pr} onQ={()=>sQ(mod)} onOpenQ={()=>sOpenQuiz(mod)} onMarkDone={()=>markDoneNoEval(mod.id)} doneNoEval={pr[mod.id]==="done"} openAnswer={myOpenAnswers.find(a=>a.modId===mod.id)} onBack={()=>sM(null)} onSub={()=>sSub(true)} vids={vids.filter(v=>v.mid===mod.id)} pdf={pdfs[mod.id]} uid={uid} uNom={uData.nom}/>,true);
   return W(<>
     <SousNav groupes={GROUPES_APPRENANT} vue={vue} onGo={sV}/>
     {vue==="home"&&<BandeauEssai K={K} mob={mob} essai={essai} abonne={abonne} reussites={reussites} onSub={()=>sSub(true)}/>}
@@ -2848,12 +2849,12 @@ function UA({uid,onOut}){
     {vue==="jrn"&&<EtatsFinanciers key="jrn" db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)} journal0/>}
     {vue==="cpt"&&<EtatsFinanciers key="cpt" db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)} guide0/>}
     {vue==="audio"&&<EcouterCours K={K} mob={mob} mods={aMods} pres={allPres.filter(estPublie)} ok={ok} onSub={()=>sSub(true)}/>}
-    {vue==="fisc"&&<CodeImpots K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
-    {vue==="fin"&&<FinanceEntreprise K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
-    {vue==="syc"&&<Sycebnl K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
-    {vue==="banq"&&<Banque K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
-    {vue==="eduf"&&<Eduf K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
-    {vue==="dtrav"&&<Travail K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="fisc"&&<CodeImpots K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="fin"&&<FinanceEntreprise K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="syc"&&<Sycebnl K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="banq"&&<Banque K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="eduf"&&<Eduf K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="dtrav"&&<Travail K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="parcs"&&<ParcsRdc K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} onGo={sV}/>}
     {vue==="sugg"&&<Suggestions K={K} mob={mob} db={db} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}}/>}
     {vue==="apropos"&&<Apropos K={K} mob={mob} onGo={sV} services/>}
@@ -3629,12 +3630,14 @@ function SubM({onClose,uid,u}){
   </Sheet>;
 }
 
-function MV({mod,sc,ok,onQ,onOpenQ,onMarkDone,doneNoEval,openAnswer,onBack,onSub,vids,pdf,uid,uNom}){
+function MV({mod,sc,pr={},ok,onQ,onOpenQ,onMarkDone,doneNoEval,openAnswer,onBack,onSub,vids,pdf,uid,uNom}){
   const K=useK();const{mob}=useW();
   const[pl,sPl]=useState(null),[plIdx,sPlIdx]=useState(0),[pdfO,sPdfO]=useState(false),[corr,sCorr]=useState(false),[exO,sExO]=useState(false);
   const[contact,sContact]=useState(false),[cTxt,sCTxt]=useState(""),[cSending,sCSending]=useState(false),[cSent,sCSent]=useState(false);
   const ex=mod.ex;
   const segsAudio=useMemo(()=>texteModuleCours(mod,ok),[mod,ok]);
+  // Évaluation ouverte après consultation du module (bas de page atteint et temps minimal) : voir parcours/lecture.jsx
+  const lect=useLecture({db,uid,cle:mod.id,progress:pr,scores:sc?{[mod.id]:sc}:{},minSec:dureeMinLecture(segsAudio),libre:doneNoEval||!!openAnswer});
   return <div style={{maxWidth:640,margin:"0 auto",animation:"up .25s ease"}}>
     {pl&&<Player url={pl.url} titre={pl.titre} onClose={()=>{sPl(null);sPlIdx(0);}} playlist={vids.map(v=>({url:v.url,titre:v.titre,gr:v.gr}))} startIdx={plIdx}/>}
     {pdfO&&pdf&&<PdfV url={pdf.url} name={pdf.name} onClose={()=>sPdfO(false)}/>}
@@ -3672,11 +3675,12 @@ function MV({mod,sc,ok,onQ,onOpenQ,onMarkDone,doneNoEval,openAnswer,onBack,onSub
         </>}
       </div>}
     </div>}
+    {ok&&!lect.lu&&<FinLecon K={K} lecture={lect} consigne="Consultez le contenu du module (audio, vidéos, exercice) jusqu'en bas de la page"/>}
     <div style={{background:K.card,border:`1px solid ${K.b1}`,boxShadow:K.sh,borderRadius:16,padding:mob?"13px":"16px 18px"}}>
       {!ok?<div style={{textAlign:"center",padding:"7px 0"}}><div style={{fontSize:28,marginBottom:7}}>🔒</div><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Module verrouillé</div><div style={{color:K.t3,fontSize:13,marginBottom:12}}>Réservé aux apprenants disposant d'un accès actif.</div><Btn ch={`${LIB_ACCES} →`} on={onSub} v="w" sx={{minHeight:44}}/></div>
-      :mod.evalType==="none"?<><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Sans évaluation</div><div style={{color:K.t3,fontSize:13,marginBottom:13}}>Ce module ne comporte pas de test noté.</div><Btn ch={doneNoEval?"✓ Terminé":"Marquer comme terminé"} on={onMarkDone} dis={doneNoEval} sx={{minHeight:44,fontSize:14}}/></>
-      :mod.evalType==="open"?<><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Questions ouvertes</div><div style={{color:K.t3,fontSize:13,marginBottom:13}}>{mod.openQ?.length||0} question(s) · Corrigé par votre formateur</div>{openAnswer?<div style={{background:openAnswer.graded?K.emBg:K.waBg,border:`1px solid ${openAnswer.graded?K.emBd:K.waBd}`,borderRadius:9,padding:"9px 12px",fontSize:13,color:openAnswer.graded?K.em:K.wa,fontWeight:600}}>{openAnswer.graded?`✓ Corrigé — ${openAnswer.totalPoints}/${openAnswer.maxPoints} pts (${openAnswer.pct}%)`:"⏳ En attente de correction par le formateur"}</div>:<Btn ch="Répondre →" on={onOpenQ} sx={{minHeight:44,fontSize:14}} dis={!mod.openQ?.length}/>}</>
-      :<><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Évaluation QCM</div><div style={{color:K.t3,fontSize:13,marginBottom:13}}>{mod.q?.length||0} questions · Feedback immédiat</div><Btn ch={sc?"Repasser →":"Commencer →"} on={onQ} sx={{minHeight:44,fontSize:14}} dis={!mod.q?.length}/></>}
+      :mod.evalType==="none"?<><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Sans évaluation</div><div style={{color:K.t3,fontSize:13,marginBottom:13}}>Ce module ne comporte pas de test noté.</div><Btn ch={doneNoEval?"✓ Terminé":"Marquer comme terminé"} on={onMarkDone} dis={doneNoEval||!lect.lu} sx={{minHeight:44,fontSize:14}}/></>
+      :mod.evalType==="open"?<><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Questions ouvertes</div><div style={{color:K.t3,fontSize:13,marginBottom:13}}>{mod.openQ?.length||0} question(s) · Corrigé par votre formateur</div>{openAnswer?<div style={{background:openAnswer.graded?K.emBg:K.waBg,border:`1px solid ${openAnswer.graded?K.emBd:K.waBd}`,borderRadius:9,padding:"9px 12px",fontSize:13,color:openAnswer.graded?K.em:K.wa,fontWeight:600}}>{openAnswer.graded?`✓ Corrigé — ${openAnswer.totalPoints}/${openAnswer.maxPoints} pts (${openAnswer.pct}%)`:"⏳ En attente de correction par le formateur"}</div>:<Btn ch="Répondre →" on={onOpenQ} sx={{minHeight:44,fontSize:14}} dis={!lect.lu||!mod.openQ?.length}/>}</>
+      :<><div style={{fontWeight:700,fontSize:14,color:K.t1,marginBottom:4}}>Évaluation QCM</div><div style={{color:K.t3,fontSize:13,marginBottom:13}}>{mod.q?.length||0} questions · Feedback immédiat</div><Btn ch={sc?"Repasser →":"Commencer →"} on={onQ} sx={{minHeight:44,fontSize:14}} dis={!lect.lu||!mod.q?.length}/></>}
     </div>
   </div>;
 }

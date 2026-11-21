@@ -6,6 +6,7 @@ import{MODULES_FIN}from"./modules";
 import{casParNum}from"./cas";
 import{LIB_ACCES}from"../acces/plateforme";
 import Objectifs,{ObjectifsModule}from"../parcours/Objectifs";
+import{useLecture,dureeMinLecture,FinLecon,RappelLecture,allerFinLecon}from"../parcours/lecture";
 import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"../parcours/ExamenFinal";
 import Etape from"../parcours/Etape";
@@ -58,7 +59,7 @@ function Cas({K,col,c,ouvert,onBascule}){
 }
 
 // Parcours progressif : module suivant ouvert à SEUIL_ELEMENT % (acquis conservés), examen final de 30 questions ensuite.
-export default function FinanceEntreprise({K,mob,db,uid,scores={},ok,onSub,onGo,apercu=false}){
+export default function FinanceEntreprise({K,mob,db,uid,scores={},progress={},ok,onSub,onGo,apercu=false}){
   const[open,sOpen]=useState(null),[mode,sMode]=useState("lecon"),[loc,sLoc]=useState({}),[vus,sVus]=useState({});
   const tous=useMemo(()=>({...scores,...loc}),[scores,loc]);
   const sc=id=>tous[cleScoreFin(id)];
@@ -66,6 +67,8 @@ export default function FinanceEntreprise({K,mob,db,uid,scores={},ok,onSub,onGo,
   const el=id=>etat.elements.find(e=>e.cle===cleScoreFin(id));
   const mod=MODULES_FIN.find(m=>m.id===open);
   const segs=useMemo(()=>mod?texteModuleFinance(mod):[],[mod]);
+  const minLecture=useMemo(()=>dureeMinLecture(mod&&mod.blocs),[mod]);
+  const lect=useLecture({db,uid,cle:mod?cleScoreFin(mod.id):null,progress,scores:tous,minSec:minLecture,libre:apercu});
   const acces=m=>apercu||ok||m.libre;
   const ouvertP=m=>apercu||el(m.id).ouvert;
   useEffect(()=>{window.scrollTo({top:0,behavior:"smooth"});},[open,mode]);
@@ -85,8 +88,8 @@ export default function FinanceEntreprise({K,mob,db,uid,scores={},ok,onSub,onGo,
         <div style={{fontFamily:"'Fraunces',serif",fontWeight:800,fontSize:mob?22:27,lineHeight:1.2,margin:"4px 0 6px"}}>{mod.titre}</div>
         <div style={{fontSize:14,opacity:.9,lineHeight:1.5}}>{mod.resume}</div>
         <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
-          {[["lecon","book-2","Leçon"],["cas","calculator",`Cas corrigés · ${cas.length}`],["qcm","checklist",`QCM · ${Math.min(NB_Q,mod.qcm.length)} questions`]].map(([k,ic,l])=><button key={k} onClick={()=>sMode(k)} className="bt" style={{background:mode===k?"#fff":"rgba(255,255,255,.16)",color:mode===k?mod.col:"#fff",border:"1px solid rgba(255,255,255,.35)",borderRadius:99,padding:"7px 13px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-            <i className={`ti ti-${ic}`} style={{fontSize:14}}/>{l}</button>)}
+          {[["lecon","book-2","Leçon"],["cas","calculator",`Cas corrigés · ${cas.length}`],["qcm","checklist",`QCM · ${Math.min(NB_Q,mod.qcm.length)} questions`]].map(([k,ic,l])=><button key={k} onClick={()=>k==="qcm"&&!lect.lu?(mode==="lecon"?allerFinLecon():sMode("lecon")):sMode(k)} className="bt" style={{background:mode===k?"#fff":"rgba(255,255,255,.16)",color:mode===k?mod.col:"#fff",border:"1px solid rgba(255,255,255,.35)",borderRadius:99,padding:"7px 13px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",display:"flex",alignItems:"center",gap:5}}>
+            <i className={`ti ti-${k==="qcm"&&!lect.lu?"lock":ic}`} style={{fontSize:14}}/>{l}</button>)}
           {s&&<span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"7px 12px",fontWeight:800,fontSize:13}}>Meilleur score : {s.pct} %</span>}
         </div>
       </div>
@@ -94,17 +97,18 @@ export default function FinanceEntreprise({K,mob,db,uid,scores={},ok,onSub,onGo,
         <ObjectifsModule K={K} mod={mod}/>
         <div style={{marginBottom:14}}><LecteurAudio K={K} segments={segs} titre="Écouter le cours"/></div>
         {mod.blocs.map((b,i)=><Bloc key={i} K={K} b={b} col={mod.col}/>)}
-        <div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap",margin:"6px 0 18px"}}>
-          <Bouton K={K} ico="calculator" ch="Faire les cas corrigés" on={()=>sMode("cas")} sx={{minWidth:220}}/>
-          <Bouton K={K} v="g" ico="checklist" ch="Passer le QCM" on={()=>sMode("qcm")}/>
+        <FinLecon K={K} lecture={lect} col={mod.col} libelle="Passer le QCM du module" onEval={()=>sMode("qcm")}/>
+        <div style={{display:"flex",justifyContent:"center",margin:"-6px 0 18px"}}>
+          <Bouton K={K} v="g" ico="calculator" ch="Faire les cas corrigés" on={()=>sMode("cas")} sx={{minWidth:220}}/>
         </div>
       </>}
       {mode==="cas"&&<>
         <div style={{fontSize:13.5,color:K.t2,lineHeight:1.55,marginBottom:12}}><i className="ti ti-info-circle" style={{color:mod.col,marginRight:5}}/>Cherchez d'abord la solution, avec une calculatrice ou un tableur, puis ouvrez le corrigé. Les données de marché sont des hypothèses pédagogiques.</div>
         {cas.map(c=><Cas key={c.n} K={K} col={mod.col} c={c} ouvert={!!vus[c.n]} onBascule={()=>sVus(v=>({...v,[c.n]:!v[c.n]}))}/>)}
-        <div style={{display:"flex",justifyContent:"center",margin:"6px 0 18px"}}><Bouton K={K} ico="checklist" ch="Passer le QCM du module" on={()=>sMode("qcm")} sx={{minWidth:240}}/></div>
+        {lect.lu?<div style={{display:"flex",justifyContent:"center",margin:"6px 0 18px"}}><Bouton K={K} ico="checklist" ch="Passer le QCM du module" on={()=>sMode("qcm")} sx={{minWidth:240}}/></div>
+          :<RappelLecture K={K} onLecon={()=>sMode("lecon")}/>}
       </>}
-      {mode==="qcm"&&<Qcm key={mod.id} K={K} mod={mod} db={db} uid={uid} ancien={s} cle={cleScoreFin(mod.id)} nbQ={NB_Q} seuil={SEUIL_ELEMENT} onFin={(r,retour)=>{if(r)sLoc(l=>({...l,[cleScoreFin(mod.id)]:r}));if(retour)sMode("lecon");}}/>}
+      {mode==="qcm"&&lect.lu&&<Qcm key={mod.id} K={K} mod={mod} db={db} uid={uid} ancien={s} cle={cleScoreFin(mod.id)} nbQ={NB_Q} seuil={SEUIL_ELEMENT} onFin={(r,retour)=>{if(r)sLoc(l=>({...l,[cleScoreFin(mod.id)]:r}));if(retour)sMode("lecon");}}/>}
       {mode==="qcm"&&s&&s.pct>=SEUIL_ELEMENT&&next&&<div style={{display:"flex",justifyContent:"center",margin:"0 0 14px"}}><Bouton K={K} ico="lock-open" ch={`Module suivant : ${next.id} · ${next.court}`} on={()=>ouvrir(next)}/></div>}
       <div style={{display:"flex",justifyContent:"space-between",gap:8,marginBottom:20}}>
         {prev?<Bouton K={K} v="g" ico="arrow-left" ch={mob?prev.id:`${prev.id} · ${prev.court}`} on={()=>ouvrir(prev)}/>:<span/>}
