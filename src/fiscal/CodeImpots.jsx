@@ -255,8 +255,11 @@ export function Bloc({K,b,col}){
 
 // ── QCM ─────────────────────────────────────────────────────────────────────────
 // cle : clé du score dans users/{uid}.scores (FISC-… par défaut) ; nbQ : taille d'une série ; seuil : % pour valider.
-// examen : pas de correction question par question ; corrigé complet affiché à la fin (examen final SYCEBNL).
-export function Qcm({K,mod,db,uid,ancien,onFin,cle=cleScore(mod.id),nbQ=NB_Q,seuil=60,examen=false,libRetour="Retour à la leçon"}){
+// examen : pas de correction question par question ; corrigé complet affiché à la fin (examens finaux), pas de
+// « Nouvelle série » immédiate (délais entre tentatives gérés par ExamenFinal).
+// onResultat({s,t,pct,motif}) : appelé à chaque fin de série, même si le score n'améliore pas le meilleur.
+// tempsEcoule : quand il passe à vrai, la série est envoyée telle quelle (questions sans réponse comptées fausses).
+export function Qcm({K,mod,db,uid,ancien,onFin,onResultat,tempsEcoule=false,cle=cleScore(mod.id),nbQ=NB_Q,seuil=60,examen=false,libRetour="Retour à la leçon"}){
   const nouvelle=prec=>{const s=tirerSerie(mod.qcm,prec,{n:nbQ});ecrireSerie(cle,s);return s;};
   const[serie,sSerie]=useState(()=>nouvelle(lireSerie(cle)));
   const[i,sI]=useState(0),[choix,sChoix]=useState(null),[bonnes,sBonnes]=useState(0),[fini,sFini]=useState(false),[saveErr,sSaveErr]=useState(""),[rep,sRep]=useState([]);
@@ -265,14 +268,21 @@ export function Qcm({K,mod,db,uid,ancien,onFin,cle=cleScore(mod.id),nbQ=NB_Q,seu
   const suivant=async()=>{
     const reps=[...rep,choix];sRep(reps);
     if(i<n-1){sI(i+1);sChoix(null);return;}
+    terminer(reps,"fin");
+  };
+  const terminer=async(reps,motif)=>{
     const nb=examen?reps.filter((c,k)=>c===serie[k].b).length:bonnes;
     sBonnes(nb);sFini(true);
     const pct=Math.round(nb/n*100);
+    onResultat&&onResultat({s:nb,t:n,pct,motif});
     if(uid&&db&&(!ancien||pct>=(ancien.pct||0))){
       try{await updateDoc(doc(db,"users",uid),{[`scores.${cle}`]:{s:nb,t:n,pct,date:new Date().toISOString()}});onFin&&onFin({s:nb,t:n,pct});}
       catch(e){sSaveErr("Score non enregistré (connexion ?). Réessayez plus tard.");}
     }
   };
+  // Temps écoulé : réponses données jusque-là (la question en cours compte si une réponse est cochée)
+  useEffect(()=>{if(tempsEcoule&&!fini){const reps=[...rep,choix];while(reps.length<n)reps.push(null);sRep(reps);terminer(reps,"temps");}
+  },[tempsEcoule]);
   const recommencer=()=>{sSerie(nouvelle(serie.map(x=>x.idx)));sI(0);sChoix(null);sBonnes(0);sFini(false);sSaveErr("");sRep([]);};
   if(fini){const pct=Math.round(bonnes/n*100),ok=pct>=seuil;return <>
     <Carte K={K} sx={{textAlign:"center",padding:"26px 18px"}}>
@@ -283,7 +293,7 @@ export function Qcm({K,mod,db,uid,ancien,onFin,cle=cleScore(mod.id),nbQ=NB_Q,seu
       {mod.qcm.length>nbQ&&<div style={{fontSize:12.5,color:K.t3,marginBottom:12,lineHeight:1.5}}><i className="ti ti-arrows-shuffle" style={{marginRight:4}}/>Chaque nouvelle série renouvelle au moins 30 % des questions ({mod.qcm.length} dans la banque) et mélange l'ordre des réponses.</div>}
       {saveErr&&<div style={{fontSize:12.5,color:K.er,marginBottom:10}}>{saveErr}</div>}
       <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-        <Bouton K={K} v="g" ico="refresh" ch="Nouvelle série" on={recommencer}/>
+        {!examen&&<Bouton K={K} v="g" ico="refresh" ch="Nouvelle série" on={recommencer}/>}
         <Bouton K={K} ico="book-2" ch={libRetour} on={()=>onFin&&onFin(null,true)}/>
       </div>
     </Carte>
