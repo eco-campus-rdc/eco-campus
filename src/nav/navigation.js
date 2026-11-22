@@ -18,7 +18,7 @@ export const GROUPES_APPRENANT = [
   ] },
   { k: "resultats", ico: "trophy", label: "Mes résultats", court: "Résultats", vues: [["res", "trophy", "Mes résultats"]] },
   { k: "carriere", ico: "briefcase", label: "Carrière", vues: [["stages", "briefcase", "Stages"], ["psycho", "brain", "Tests psychotechniques"]] },
-  { k: "echanges", ico: "message-circle", label: "Échanges", vues: [["msg", "message-circle", "Messages"], ["sugg", "bulb", "Suggestions"]] },
+  { k: "echanges", ico: "message-circle", label: "Échanges", vues: [["msg", "message-circle", "Messages"], ["sugg", "bulb", "Suggestions"], ["filleuls", "users-plus", "Mes filleuls"]] },
 ];
 // Accessibles par le profil (Paramètres) et la page À propos, hors menu
 // « tdb » : tableau de bord en lecture seule, ouvert depuis l'accueil des observateurs désignés par l'administrateur

@@ -20,6 +20,7 @@ import TableauLecture from"./admin/TableauLecture";
 import Observateurs,{useObservateurs}from"./admin/Observateurs";
 import AdminEssai,{useConfigEssai}from"./essai/AdminEssai";
 import{BandeauEssai,FinEssai,CarteParrainage}from"./essai/BandeauEssai";
+import MesFilleuls from"./essai/MesFilleuls";
 import{etatEssai,parrainDepuisUrl}from"./essai/essai";
 import PuzzleCarte from"./psycho/PuzzleCarte";
 import OuSeTrouve from"./psycho/OuSeTrouve";
@@ -279,7 +280,7 @@ function useUsers(){
 // activite/{uid} : dernière activité de chaque compte (signal toutes les 90 s quand l'onglet est visible)
 // connexions/{id} : une ligne par ouverture de session (une fois par onglet)
 const ENLIGNE_MS=4*60*1000;
-const VUE_LBL={home:"Accueil",form:"Mes formations",msg:"Messages",pres:"Présentations",jrn:"Monographie ZAO",cpt:"Guide des comptes",audio:"Écouter les cours",fisc:"Code des impôts",fin:"Finance d'entreprise",syc:"SYCEBNL",banq:"Comptabilité bancaire",eduf:"Éducation financière",dtrav:"Droit du travail",ethique:"Éthique",tdb:"Tableau de bord",parcs:"Parcs et sites de la RDC",sugg:"Suggestions",apropos:"À propos",stages:"Stages",videos:"Vidéos",ef:"États financiers",psycho:"Tests psychotechniques",services:"Services",prog:"Progrès",res:"Résultats",mods:"Mes modules",vids:"Mes vidéos",docs:"Documents",corr:"Corrections",fmsg:"Messages",stats:"Statistiques",admin:"Administration",param:"Paramètres"};
+const VUE_LBL={home:"Accueil",form:"Mes formations",msg:"Messages",pres:"Présentations",jrn:"Monographie ZAO",cpt:"Guide des comptes",audio:"Écouter les cours",fisc:"Code des impôts",fin:"Finance d'entreprise",syc:"SYCEBNL",banq:"Comptabilité bancaire",eduf:"Éducation financière",dtrav:"Droit du travail",ethique:"Éthique",filleuls:"Mes filleuls",tdb:"Tableau de bord",parcs:"Parcs et sites de la RDC",sugg:"Suggestions",apropos:"À propos",stages:"Stages",videos:"Vidéos",ef:"États financiers",psycho:"Tests psychotechniques",services:"Services",prog:"Progrès",res:"Résultats",mods:"Mes modules",vids:"Mes vidéos",docs:"Documents",corr:"Corrections",fmsg:"Messages",stats:"Statistiques",admin:"Administration",param:"Paramètres"};
 const appareil=()=>{const ua=navigator.userAgent||"";const os=/Android/i.test(ua)?"Android":/iPhone|iPad|iPod/i.test(ua)?"iOS":/Windows/i.test(ua)?"Windows":/Mac OS/i.test(ua)?"Mac":/Linux/i.test(ua)?"Linux":"Autre";
   const nav=/Edg\//.test(ua)?"Edge":/OPR\//.test(ua)?"Opera":/SamsungBrowser/.test(ua)?"Samsung":/Chrome\//.test(ua)?"Chrome":/Firefox\//.test(ua)?"Firefox":/Safari\//.test(ua)?"Safari":"Navigateur";
   const app=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||String(document.referrer).startsWith("android-app://")?"Application":"Site web";
@@ -2841,7 +2842,8 @@ function UA({uid,onOut}){
     {vue==="home"&&estObs&&<button onClick={()=>sV("tdb")} className="bt" style={{width:"100%",display:"flex",alignItems:"center",gap:12,textAlign:"left",background:"linear-gradient(135deg,#011B33,#1E4FA3)",color:"#fff",border:"none",borderRadius:16,padding:"14px 16px",marginBottom:14,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
       <i className="ti ti-chart-dots" style={{fontSize:26,flexShrink:0}}/><span style={{flex:1}}><span style={{display:"block",fontWeight:800,fontSize:15}}>Tableau de bord Éco-Campus</span><span style={{display:"block",fontSize:13,opacity:.85}}>Accès en lecture seule accordé par l'administration</span></span><i className="ti ti-chevron-right" style={{fontSize:20}}/></button>}
     {vue==="tdb"&&(estObs?<TableauLecture K={K} mob={mob}/>:<div style={{textAlign:"center",color:K.t3,padding:30}}>Votre compte n'a pas accès au tableau de bord.</div>)}
-    {vue==="home"&&<CarteParrainage K={K} mob={mob} uid={uid} gagnes={uData.parrainageGagnes||0} cfg={cfgEssai}/>}
+    {vue==="home"&&<CarteParrainage K={K} mob={mob} uid={uid} gagnes={uData.parrainageGagnes||0} cfg={cfgEssai} onVoir={()=>sV("filleuls")}/>}
+    {vue==="filleuls"&&<MesFilleuls K={K} mob={mob} uid={uid} cfg={cfgEssai}/>}
     {vue==="home"&&<Home u={uData} pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} mods={aMods} vids={vids} onOpen={ouvrirModule} onSub={()=>sSub(true)} onVid={()=>sV("videos")} onPres={()=>sV("pres")} onStages={()=>sV("stages")} onEf={()=>sV("ef")} onFisc={()=>sV("fisc")} onFin={()=>sV("fin")} onJrn={()=>sV("jrn")} onCpt={()=>sV("cpt")} onAudio={()=>sV("audio")} live={live} presCount={allPres.filter(estPublie).length} uid={uid} onGo={sV}/>}
     {vue==="videos"&&<VidsPage ok={ok} onSub={()=>sSub(true)} vids={vids} live={live}/>}
     {vue==="pres"&&<PresPage ok={ok} onSub={()=>sSub(true)} pres={allPres.filter(estPublie)}/>
