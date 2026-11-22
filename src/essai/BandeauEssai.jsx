@@ -48,7 +48,7 @@ export function FinEssai({K,uid,essai,abonne,reussites,onSub,pret}){
   </div>;
 }
 
-export function CarteParrainage({K,mob,uid,gagnes=0,cfg}){
+export function CarteParrainage({K,mob,uid,gagnes=0,cfg,onVoir}){
   const c=lireConfigEssai(cfg),lien=lienParrainage(uid,typeof window!=="undefined"?window.location.origin:undefined);
   const[copie,sCopie]=useState(false);
   const copier=()=>{try{navigator.clipboard.writeText(lien);sCopie(true);setTimeout(()=>sCopie(false),2000);}catch{}};
@@ -65,6 +65,7 @@ export function CarteParrainage({K,mob,uid,gagnes=0,cfg}){
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
       <button onClick={partager} className="bt" style={btn(true)}><i className="ti ti-brand-whatsapp"/>Partager mon lien</button>
       <button onClick={copier} className="bt" style={btn(false)}><i className={`ti ti-${copie?"check":"copy"}`}/>{copie?"Lien copié":"Copier le lien"}</button>
+      {onVoir&&<button onClick={onVoir} className="bt" style={btn(false)}><i className="ti ti-users"/>Mes filleuls</button>}
     </div>
   </div>;
 }
