@@ -108,6 +108,17 @@ export const OBJECTIFS = {
       "Raisonner sur les dilemmes du numérique, de la santé et de l'environnement.",
     ],
   },
+  MINES: {
+    general: "Comprendre le Code minier congolais révisé en 2018 et l'utiliser pour défendre ses droits, conseiller une entreprise ou contrôler l'usage des revenus miniers.",
+    competences: [
+      "Expliquer la propriété de l'État sur le sous-sol, distinguer mines et carrières et identifier les acteurs du secteur.",
+      "Décrire le parcours d'un titre minier, du Permis de recherches au Permis d'exploitation, et les parts dues à l'État et aux Congolais.",
+      "Appliquer les règles de l'exploitation artisanale, de la coopérative au comptoir, et exiger la traçabilité des minerais.",
+      "Calculer la redevance minière selon la substance et sa répartition entre l'État, la province, l'ETD et le FOMIN.",
+      "Faire valoir les droits des communautés : étude d'impact, cahier des charges, dotation de 0,3 %, indemnisation et réparation.",
+      "Utiliser la transparence (contrats, paiements, propriétaires réels, ITIE) pour exiger des comptes, et appliquer les règles de contenu local.",
+    ],
+  },
   DTRAV: {
     general: "Connaître et appliquer le Code du travail congolais, à jour de la réforme de 2016, du côté du travailleur comme de l'employeur.",
     competences: [

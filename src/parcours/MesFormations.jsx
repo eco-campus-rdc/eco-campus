@@ -26,6 +26,8 @@ export const FORMATIONS = [
     resume: "Le Code du travail et la réforme de 2016 : contrats, essai, discipline, maternité, temps de travail, congés, préavis, licenciement et recours." },
   { id: "ETHIQ", ico: "compass", col: "#B91C1C", niveau: "Tous publics", libre: "ET1",
     resume: "Quatre niveaux, de la vie quotidienne au bien commun : méthode, grandes théories, corruption et conflits d'intérêts, éthique du comptable, lancement d'alerte, redevabilité, numérique et environnement, avec caricatures et cas pratiques." },
+  { id: "MINES", ico: "pick", col: "#92400E", niveau: "Tous publics", libre: "MI1",
+    resume: "Le Code minier révisé en 2018 : propriété du sous-sol, permis et parts de l'État, artisanal et traçabilité, redevance et superprofits, communautés, environnement et transparence, avec caricatures animées." },
   { id: "EDUF", ico: "pig-money", col: "#15803D", niveau: "Tous publics", libre: "EF1", nLibres: 3,
     resume: "Pour tous : budget, épargne, Mobile Money, crédit, dollar et inflation, assurances, arnaques et projets d'avenir, avec simulateurs." },
 ];

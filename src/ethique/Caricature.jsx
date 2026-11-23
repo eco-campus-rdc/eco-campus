@@ -181,3 +181,5 @@ export function Dilemme({K,col,situation,options=[],question,piste}){
 }
 
 export const SCHEMAS_ETHIQUE={caricature:Caricature,dilemme:Dilemme};
+// Éléments réutilisés par les caricatures animées (src/mines/Animation.jsx)
+export{Perso,Bulle,PEAUX,ENCRE,Bureau,Billets};
