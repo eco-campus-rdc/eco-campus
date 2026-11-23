@@ -361,6 +361,38 @@ export const OBJECTIFS_MODULES = {
     "Raisonner sur le consentement éclairé, le travail des enfants et les générations futures.",
   ],
 
+  // ── Code minier ──
+  MI1: [
+    "Expliquer pourquoi le sous-sol appartient à l'État et ce que cela implique pour le propriétaire du sol.",
+    "Distinguer mines, carrières et substances stratégiques.",
+    "Situer le rôle du ministre, du Cadastre minier, des provinces et du SAEMAPE.",
+  ],
+  MI2: [
+    "Décrire les durées du Permis de recherches et du Permis d'exploitation.",
+    "Lister les conditions d'octroi : EIES, PGES, cahier des charges, 10 % à l'État et 10 % de Congolais.",
+    "Calculer la part minimale de l'État après un ou plusieurs renouvellements.",
+  ],
+  MI3: [
+    "Identifier qui peut exploiter dans une zone d'exploitation artisanale.",
+    "Suivre le circuit légal du minerai, de la coopérative au comptoir agréé.",
+    "Refuser un minerai sans traçabilité et connaître les sanctions liées au travail des enfants.",
+  ],
+  MI4: [
+    "Déterminer le taux de redevance applicable à une substance.",
+    "Calculer la redevance sur la valeur commerciale brute et sa répartition 50 / 25 / 15 / 10.",
+    "Expliquer l'impôt sur les bénéfices, l'impôt sur les superprofits et la stabilité de 5 ans.",
+  ],
+  MI5: [
+    "Vérifier les obligations environnementales : EIES, PGES, certificat et réhabilitation.",
+    "Calculer la dotation communautaire minimale de 0,3 % du chiffre d'affaires.",
+    "Faire valoir le droit à indemnisation et à réparation des riverains.",
+  ],
+  MI6: [
+    "Dire ce que la transparence oblige à publier : contrats, paiements, statistiques, propriétaires réels.",
+    "Expliquer le rôle de l'ITIE et du FOMIN.",
+    "Appliquer les règles de contenu local et repérer un montage de prête-nom.",
+  ],
+
   // ── Droit du travail ──
   DT1: [
     "Définir le travailleur, l'employeur et le contrat de travail au sens du Code.",

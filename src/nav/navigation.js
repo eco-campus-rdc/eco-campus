@@ -10,7 +10,7 @@ export const GROUPES_APPRENANT = [
   { k: "parcours", ico: "certificate", label: "Mes formations", court: "Formations", vues: [
     ["form", "layout-grid", "Vue d'ensemble"], ["mods", "book-2", "SYSCOHADA · Niveau 1"], ["jrn", "notebook", "SYSCOHADA · Niveau 2"],
     ["fisc", "receipt-tax", "Fiscalité RDC"], ["fin", "chart-pie", "Finance d'entreprise"], ["banq", "building-bank", "Comptabilité bancaire"],
-    ["syc", "building-community", "SYCEBNL"], ["dtrav", "scale", "Droit du travail"], ["ethique", "compass", "Éthique"], ["eduf", "pig-money", "Éducation financière"],
+    ["syc", "building-community", "SYCEBNL"], ["dtrav", "scale", "Droit du travail"], ["ethique", "compass", "Éthique"], ["mines", "pick", "Code minier"], ["eduf", "pig-money", "Éducation financière"],
   ] },
   { k: "apprendre", ico: "tools", label: "Ressources", vues: [
     ["ef", "report-money", "Atelier États financiers"], ["cpt", "books", "Guide des comptes"], ["audio", "headphones", "Écouter les cours"],
@@ -40,7 +40,7 @@ export const GROUPES_ADMIN = [
   ] },
   { k: "parc", ico: "route", label: "Parcours métier", court: "Parcours", vues: [
     ["ef", "report-money", "États financiers"], ["fisc", "receipt-tax", "Code des impôts"], ["fin", "chart-pie", "Finance d'entreprise"],
-    ["syc", "building-community", "SYCEBNL"], ["banq", "building-bank", "Comptabilité bancaire"], ["dtrav", "scale", "Droit du travail"], ["ethique", "compass", "Éthique"], ["eduf", "pig-money", "Éducation financière"],
+    ["syc", "building-community", "SYCEBNL"], ["banq", "building-bank", "Comptabilité bancaire"], ["dtrav", "scale", "Droit du travail"], ["ethique", "compass", "Éthique"], ["mines", "pick", "Code minier"], ["eduf", "pig-money", "Éducation financière"],
     ["parcs", "trees", "Parcs de la RDC"],
   ] },
   { k: "ech", ico: "message-circle", label: "Échanges", vues: [

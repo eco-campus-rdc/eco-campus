@@ -171,6 +171,11 @@ export function texteModuleEthique(mod) {
   return segments([point(`Éthique, module ${String(mod.id).replace(/^ET/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);
 }
 
+// ── Module du Code minier (src/mines/modules.js) : narration écrite pour l'oral
+export function texteModuleMines(mod) {
+  return segments([point(`Code minier, module ${String(mod.id).replace(/^MI/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);
+}
+
 // ── Module de droit du travail (src/travail/modules.js) : narration écrite pour l'oral
 export function texteModuleTravail(mod) {
   return segments([point(`Droit du travail, module ${String(mod.id).replace(/^DT/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);

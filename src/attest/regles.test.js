@@ -15,7 +15,7 @@ test("catalogue fiscal aligné sur les modules de l'application", () => {
   expect(BQ.map(([id, t]) => [id, t])).toEqual(MODULES_BQ.map(m => [m.id, m.titre]));
   expect(EF.map(([id, t]) => [id, t])).toEqual(MODULES_EDUF.map(m => [m.id, m.titre]));
   expect(DT.map(([id, t]) => [id, t])).toEqual(MODULES_DT.map(m => [m.id, m.titre]));
-  expect(PARCOURS.map(p => p.id)).toEqual(["SYS-N1", "FISC", "SYS-N2", "FIN", "SYCEBNL", "BANQUE", "EDUF", "DTRAV", "ETHIQ"]);
+  expect(PARCOURS.map(p => p.id)).toEqual(["SYS-N1", "FISC", "SYS-N2", "FIN", "SYCEBNL", "BANQUE", "EDUF", "DTRAV", "ETHIQ", "MINES"]);
   expect([SEUIL_ELEMENT, SEUIL_MOYENNE]).toEqual([70, 80]);
 });
 

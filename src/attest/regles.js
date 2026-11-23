@@ -73,6 +73,13 @@ const ETH = [
   ["ET7", "Éthique publique et redevabilité"], ["ET8", "Dilemmes de notre temps : numérique, santé, environnement"],
 ];
 const cleEth = id => `ET-${id}`;
+// Modules du Code minier (loi n° 007/2002 modifiée par la loi n° 18/001 de 2018 ; aligné sur src/mines/modules — vérifié par les tests)
+const MIN = [
+  ["MI1", "Le cadre : à qui appartiennent les mines ?"], ["MI2", "Les droits miniers : du permis de recherches au permis d'exploitation"],
+  ["MI3", "L'exploitation artisanale : coopératives, négociants, traçabilité"], ["MI4", "La fiscalité minière : redevance, impôts et superprofits"],
+  ["MI5", "Communautés, environnement et droits humains"], ["MI6", "Transparence, contrôle et contenu local"],
+];
+const cleMin = id => `MI-${id}`;
 const CLE_FINAL_SYC = "SYC-FINAL";
 const COEF_FINAL_SYC = 2; // = COEF_FINAL
 const cleSyc = id => `SYC-${id}`;
@@ -90,6 +97,7 @@ const EXAMENS = {
   EDUF: { cle: "EF-FINAL", nbQ: 30, heures: 1, vue: "eduf", progressif: true },
   DTRAV: { cle: "DT-FINAL", nbQ: 30, heures: 1, vue: "dtrav", progressif: true },
   ETHIQ: { cle: "ET-FINAL", nbQ: 30, heures: 1, vue: "ethique", progressif: true },
+  MINES: { cle: "MI-FINAL", nbQ: 30, heures: 1, vue: "mines", progressif: true },
 };
 
 const PARCOURS = [
@@ -111,6 +119,8 @@ const PARCOURS = [
     description: "Les 6 modules de droit du travail congolais (cadre et réforme de 2016, contrat et période d'essai, exécution, maladie et maternité, temps de travail, salaire et congés, préavis et fin du contrat, conciliation, tribunal et syndicats), avec un simulateur de préavis, et l'examen final de 30 questions, coefficient 2." },
   { id: "ETHIQ", titre: "Questions et dilemmes éthiques — de la vie quotidienne au bien commun", court: "Éthique", certificat: true,
     description: "Les 8 modules d'éthique en 4 niveaux (facile : bases et méthode ; moyen : théories, argent et conflits d'intérêts ; difficile : éthique du comptable, confidentialité et lancement d'alerte ; très avancé : éthique publique et redevabilité, dilemmes du numérique, de la santé et de l'environnement), avec caricatures et cas pratiques, et l'examen final de 30 questions, coefficient 2." },
+  { id: "MINES", titre: "Le Code minier expliqué — loi n° 007/2002 révisée en 2018", court: "Code minier", certificat: true,
+    description: "Les 6 modules du Code minier congolais (propriété du sous-sol et acteurs, droits miniers et parts de l'État, exploitation artisanale et traçabilité, redevance, impôts et superprofits, communautés, environnement et droits humains, transparence et contenu local), avec caricatures animées, un simulateur de redevance et l'examen final de 30 questions, coefficient 2." },
 ];
 
 // Modules de cours pris en compte : ceux publiés (on !== false), dans l'ordre du catalogue
@@ -131,6 +141,8 @@ function elementsBase(id, modules) {
   // 1 h 30 par module (leçon, simulateur de préavis, audio, QCM)
   if (id === "DTRAV") return DT.map(([f, t]) => ({ cle: cleDt(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   // 1 h par module (leçon, caricature, cas pratique, audio, QCM)
+  // 1 h 30 par module (leçon, caricature animée, simulateur, audio, QCM)
+  if (id === "MINES") return MIN.map(([f, t]) => ({ cle: cleMin(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   if (id === "ETHIQ") return ETH.map(([f, t]) => ({ cle: cleEth(f), titre: `${f} · ${t}`, heures: 1, evalue: true }));
   if (id === "EDUF") return EF.map(([f, t]) => ({ cle: cleEf(f), titre: `${f} · ${t}`, heures: 1, evalue: true }));
   if (id === "SYCEBNL") return SYC.map(([f, t]) => ({ cle: cleSyc(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
@@ -209,4 +221,4 @@ function numeroAttestation(alea = Math.random, annee = new Date().getFullYear())
 }
 const numeroValide = n => /^EC-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/.test(String(n || ""));
 
-module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
+module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
