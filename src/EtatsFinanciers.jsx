@@ -84,7 +84,7 @@ function NumCell({K,value,onChange,dis}){
 
 // ══════════════════ RACINE ══════════════════
 // sansRaccourcis : la navigation de l'apprenant propose déjà la monographie et le guide (sous-rubriques « Parcours métier »)
-export default function EtatsFinanciers({db,K,mob,me,ok=true,onSub,journal0=false,guide0=false,sansRaccourcis=false}){
+export default function EtatsFinanciers({db,K,mob,me,ok=true,onSub,journal0=false,guide0=false,exo0=null,sansRaccourcis=false}){
   const staff=me.role==="formateur"||me.role==="admin";
   useEffect(()=>{if(me.role!=="admin")inscrireAnnuaire(db,me);},[db,me.uid,me.nom,me.mail,me.role]);
   const[dossiers,sDos]=useState([]),[loading,sL]=useState(true),[err,sErr]=useState("");
@@ -104,7 +104,7 @@ export default function EtatsFinanciers({db,K,mob,me,ok=true,onSub,journal0=fals
     {onSub&&<B K={K} ch={LIB_ACCES} on={onSub}/>}
   </div>;
   if(journal)return <AtelierJournal K={K} mob={mob} db={db} me={me} onBack={()=>sJournal(false)} onEtats={()=>{sJournal(false);sCreer(CAS_JOURNAL.id);}}/>;
-  if(guide)return <div style={{animation:"fadeIn .3s ease"}}><div style={{marginBottom:12}}><B K={K} v="g" sm ico="arrow-left" ch="Dossiers" on={()=>sGuide(false)}/></div><GuideView K={K} mob={mob} db={db} me={me}/></div>;
+  if(guide)return <div style={{animation:"fadeIn .3s ease"}}><div style={{marginBottom:12}}><B K={K} v="g" sm ico="arrow-left" ch="Dossiers" on={()=>sGuide(false)}/></div><GuideView K={K} mob={mob} db={db} me={me} exo0={exo0}/></div>;
   if(cur)return <><style>{PRINT_CSS}</style><Dossier db={db} K={K} mob={mob} me={me} staff={staff} d={cur} onBack={()=>sOpen(null)}/></>;
   const list=dossiers.filter(d=>!filtre||d.statut===filtre);
   return <div style={{animation:"fadeIn .3s ease"}}>
@@ -401,7 +401,7 @@ function FicheModal({K,ligne,onClose}){
   const c=String(ligne.c||"");const f=ficheCompte(c);
   return <Modal K={K} title={`Compte ${c}${ligne.l?` — ${ligne.l}`:""}`} onClose={onClose}><FicheContenu K={K} c={c} f={f} ligne={ligne}/></Modal>;
 }
-function GuideView({K,mob,lignes,db,me}){
+function GuideView({K,mob,lignes,db,me,exo0=null}){
   // Exercice « Quel compte ? » : users/{uid}.scores["CPT-<classe>"] (CPT-T pour toutes les classes), meilleur score conservé
   const[scores,sScores]=useState({});
   const uid=me&&me.uid;
@@ -424,7 +424,7 @@ function GuideView({K,mob,lignes,db,me}){
         <ul style={{margin:"8px 0 2px 18px",display:"flex",flexDirection:"column",gap:5}}>{r.p.map((x,j)=><li key={j} style={{fontSize:12,color:K.t2,lineHeight:1.55}}>{x}</li>)}</ul>
       </details>)}
     </div>
-    :<GuideComptes K={K} mob={mob} onScore={onScore} scores={scores} fiche={c=><FicheContenu K={K} c={c} f={ficheCompte(c)} ligne={ligneDe(c)}/>}/>}
+    :<GuideComptes K={K} mob={mob} onScore={onScore} scores={scores} depart={exo0!=null?{v:"exo",k:exo0}:null} fiche={c=><FicheContenu K={K} c={c} f={ficheCompte(c)} ligne={ligneDe(c)}/>}/>}
   </div>;
 }
 
