@@ -1,4 +1,4 @@
-import { etapeAcces, suiviCode } from "./suiviCode";
+import { etapeAcces, suiviCode, normaliserCode } from "./suiviCode";
 
 const T = Date.parse("2026-11-23T08:00:00Z"), H = 3600000;
 describe("Suivi d'une demande d'accès", () => {
@@ -33,5 +33,11 @@ describe("Suivi d'une demande d'accès", () => {
     expect(s[1].l).toMatch(/l'e-mail a échoué/);
     expect(s[2]).toMatchObject({ ok: false, l: "Pas reconnecté depuis l'envoi" });
     expect(suiviCode({ ...u, abonnement: "actif", codeValide: true })[3]).toMatchObject({ ok: true, l: "Accès activé" });
+  });
+  test("saisie tolérante du code", () => {
+    ["EC-AM55YKBN", "ec-am55ykbn", " EC - AM55 YKBN ", "EC AM55YKBN", "AM55YKBN", "EC—AM55YKBN", "ECAM55YKBN"].forEach(s => expect(normaliserCode(s)).toBe("EC-AM55YKBN"));
+    expect(normaliserCode("of-abcd1234")).toBe("OF-ABCD1234");
+    expect(normaliserCode("FO-XY12")).toBe("FO-XY12");
+    expect(normaliserCode("")).toBe("");
   });
 });

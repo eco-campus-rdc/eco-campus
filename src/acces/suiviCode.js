@@ -6,6 +6,15 @@
 
 const ms = v => (v == null ? null : typeof v === "number" ? v : Date.parse(v) || null);
 
+// Saisie tolérante d'un code : majuscules, espaces et points ignorés, tirets typographiques remplacés ;
+// « AM55YKBN » seul (8 caractères) est compris comme le code d'accès « EC-AM55YKBN ».
+export function normaliserCode(s) {
+  const c = String(s || "").toUpperCase().replace(/[\s.]/g, "").replace(/[–—_]/g, "-");
+  if (/^[A-Z0-9]{8}$/.test(c)) return "EC-" + c;
+  const m = c.match(/^(EC|OF|FO)-?([A-Z0-9]+)$/);
+  return m ? `${m[1]}-${m[2]}` : c;
+}
+
 // Étape d'un compte : attente (paiement à vérifier) | code (code envoyé, pas encore activé) | actif | expire | aucun
 export function etapeAcces(u, maintenant = Date.now()) {
   if (!u) return "aucun";
