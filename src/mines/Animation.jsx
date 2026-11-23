@@ -1,5 +1,6 @@
 import React,{useEffect,useRef,useState}from"react";
 import{Perso,Bulle,PEAUX,ENCRE}from"../ethique/Caricature";
+import{avancer,parler,synthese,lireSon,ecrireSon,EVT_AUDIO}from"./voix";
 
 // ══════════════════ CARICATURES ANIMÉES (CODE MINIER) ══════════════════
 // Schéma de leçon { type: "schema", kind: "animation", scene, etapes: [{ t, texte }] } : une petite scène dessinée qui se joue
@@ -7,6 +8,7 @@ import{Perso,Bulle,PEAUX,ENCRE}from"../ethique/Caricature";
 // (en secondes) qui renvoie le dessin SVG : le rendu est déterministe, l'utilisateur peut revenir à n'importe quelle étape.
 // Personnages génériques : aucune personne réelle n'est représentée. Si l'appareil demande moins d'animations
 // (prefers-reduced-motion), la scène s'affiche directement dans son état final avec toutes les étapes.
+// Voix off (src/mines/voix.js) : chaque étape est lue à voix haute, l'animation attend la fin de la phrase ; bouton Voix / Muet.
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const L=(t,a,b)=>clamp((t-a)/(b-a));
@@ -144,17 +146,36 @@ export function CaricatureAnimee({K,col,scene,etapes=[],legende}){
   const S=SCENES_ANIMEES[scene];
   const reduit=typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const[t,sT]=useState(reduit&&S?S.duree:0),[lecture,sLecture]=useState(false),[lancee,sLancee]=useState(!!reduit);
-  const dernier=useRef(null);
+  const[son,sSon]=useState(()=>!!synthese()&&lireSon());
+  const dernier=useRef(null),tRef=useRef(t),dite=useRef(-1),parle=useRef(false),annuler=useRef(()=>{}),id=useRef(`anim-${Math.random()}`),sonRef=useRef(son);
+  tRef.current=t;sonRef.current=son;
+  const bornes=etapes.map(x=>x.t);
+  // Voix : on coupe la phrase en cours (pause, autre étape, autre lecteur, démontage)
+  const taire=()=>{annuler.current();annuler.current=()=>{};parle.current=false;const s=synthese();if(s&&s.speaking)s.cancel();};
+  const dire=i=>{if(!sonRef.current||!etapes[i])return;taire();dite.current=i;parle.current=true;
+    window.dispatchEvent(new CustomEvent(EVT_AUDIO,{detail:id.current}));
+    annuler.current=parler(etapes[i].texte,()=>{parle.current=false;});};
+  useEffect(()=>{const autre=e=>{if(e.detail!==id.current){annuler.current();parle.current=false;sLecture(false);}};
+    window.addEventListener(EVT_AUDIO,autre);return()=>{window.removeEventListener(EVT_AUDIO,autre);taire();};
+  },[]);
   useEffect(()=>{
     if(!lecture||!S)return;
-    let id;const pas=ts=>{if(dernier.current==null)dernier.current=ts;const dt=(ts-dernier.current)/1000;dernier.current=ts;
-      sT(v=>{const n=v+dt;if(n>=S.duree){sLecture(false);return S.duree;}return n;});id=requestAnimationFrame(pas);};
-    id=requestAnimationFrame(pas);return()=>{cancelAnimationFrame(id);dernier.current=null;};
+    let id_;const pas=ts=>{if(dernier.current==null)dernier.current=ts;const dt=Math.min(.1,(ts-dernier.current)/1000);dernier.current=ts;
+      const r=avancer({t:tRef.current,dt,duree:S.duree,bornes,dite:dite.current,parle:parle.current,son:sonRef.current});
+      if(r.dire!=null)dire(r.dire);
+      tRef.current=r.t;sT(r.t);
+      if(r.fin){sLecture(false);return;}
+      id_=requestAnimationFrame(pas);};
+    id_=requestAnimationFrame(pas);return()=>{cancelAnimationFrame(id_);dernier.current=null;};
   },[lecture,S]);
   if(!S)return null;
   const fini=t>=S.duree,iEtape=Math.max(0,etapes.reduce((k,e,i)=>e.t<=t?i:k,0)),e=etapes[iEtape];
-  const jouer=()=>{sLancee(true);if(fini)sT(0);sLecture(true);};
-  const aller=i=>{sLancee(true);sT(etapes[i].t+0.01);sLecture(false);};
+  // Lecture : on relit l'étape en cours depuis son début (geste de l'utilisateur, exigé par les navigateurs mobiles)
+  const jouer=()=>{sLancee(true);let d=t;if(fini){d=0;sT(0);tRef.current=0;}
+    const k=Math.max(0,etapes.reduce((m,x,i)=>x.t<=d?i:m,0));dite.current=k;if(sonRef.current)dire(k);sLecture(true);};
+  const arreter=()=>{taire();sLecture(false);};
+  const aller=i=>{taire();sLancee(true);sT(etapes[i].t+0.01);tRef.current=etapes[i].t+0.01;dite.current=i;sLecture(false);};
+  const basculerSon=()=>{const n=!son;sSon(n);sonRef.current=n;ecrireSon(n);if(!n)taire();else if(lecture)dire(iEtape);};
   const bouton={display:"inline-flex",alignItems:"center",gap:6,border:"none",borderRadius:99,padding:"7px 13px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif"};
   return <figure style={{margin:0}}>
     <div style={{position:"relative",maxWidth:560,margin:"0 auto"}}>
@@ -165,11 +186,12 @@ export function CaricatureAnimee({K,col,scene,etapes=[],legende}){
     <div style={{maxWidth:560,margin:"8px auto 0"}}>
       <div style={{height:5,background:K.c2,borderRadius:99,overflow:"hidden"}}><div style={{width:`${100*t/S.duree}%`,height:"100%",background:col||K.em}}/></div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
-        <button onClick={()=>lecture?sLecture(false):jouer()} className="bt" style={{...bouton,background:col||K.em,color:"#fff"}}><i className={`ti ti-${lecture?"player-pause":fini?"rotate-clockwise":"player-play"}`}/>{lecture?"Pause":fini?"Rejouer":t>0?"Reprendre":"Lecture"}</button>
+        <button onClick={()=>lecture?arreter():jouer()} className="bt" style={{...bouton,background:col||K.em,color:"#fff"}}><i className={`ti ti-${lecture?"player-pause":fini?"rotate-clockwise":"player-play"}`}/>{lecture?"Pause":fini?"Rejouer":t>0?"Reprendre":"Lecture"}</button>
         <div style={{display:"flex",gap:5}}>{etapes.map((x,i)=><button key={i} onClick={()=>aller(i)} className="bt" aria-label={`Étape ${i+1}`} style={{width:26,height:26,borderRadius:"50%",border:`1.5px solid ${i===iEtape&&lancee?col||K.em:K.b1}`,background:i===iEtape&&lancee?col||K.em:K.card,color:i===iEtape&&lancee?"#fff":K.t2,fontWeight:800,fontSize:12,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{i+1}</button>)}</div>
+        {synthese()&&<button onClick={basculerSon} className="bt" aria-pressed={son} aria-label={son?"Couper la voix":"Activer la voix"} title={son?"Couper la voix":"Activer la voix"} style={{...bouton,marginLeft:"auto",background:son?`${col||K.em}18`:K.c2,color:son?col||K.em:K.t3,border:`1px solid ${son?`${col||K.em}55`:K.b1}`}}><i className={`ti ti-${son?"volume":"volume-off"}`} style={{fontSize:16}}/>{son?"Voix":"Muet"}</button>}
       </div>
       {reduit?<ol style={{fontSize:14,color:K.t1,lineHeight:1.55,margin:"8px 0 0",paddingLeft:20}}>{etapes.map((x,i)=><li key={i}>{x.texte}</li>)}</ol>
-        :<div aria-live="polite" style={{minHeight:46,background:K.c2,border:`1px solid ${K.b0}`,borderRadius:10,padding:"9px 12px",marginTop:8,fontSize:14,color:K.t1,lineHeight:1.5}}>{lancee&&e?<><b style={{color:col||K.em}}>{iEtape+1}/{etapes.length}</b> · {e.texte}</>:<span style={{color:K.t3}}>Touchez « Lancer l'animation » : la scène se joue en {Math.round(S.duree)} secondes, en {etapes.length} étapes.</span>}</div>}
+        :<div aria-live="polite" style={{minHeight:46,background:K.c2,border:`1px solid ${K.b0}`,borderRadius:10,padding:"9px 12px",marginTop:8,fontSize:14,color:K.t1,lineHeight:1.5}}>{lancee&&e?<><b style={{color:col||K.em}}>{iEtape+1}/{etapes.length}</b> · {e.texte}</>:<span style={{color:K.t3}}>Touchez « Lancer l'animation » : la scène se joue en {etapes.length} étapes{son?", commentées à voix haute":""}.</span>}</div>}
       {legende&&<figcaption style={{textAlign:"center",fontSize:13,color:K.t3,fontStyle:"italic",marginTop:6}}>{legende}</figcaption>}
     </div>
   </figure>;
