@@ -21,7 +21,7 @@ import Observateurs,{useObservateurs}from"./admin/Observateurs";
 import AdminEssai,{useConfigEssai}from"./essai/AdminEssai";
 import{BandeauEssai,FinEssai,CarteParrainage}from"./essai/BandeauEssai";
 import MesFilleuls from"./essai/MesFilleuls";
-import{etapeAcces,suiviCode}from"./acces/suiviCode";
+import{etapeAcces,suiviCode,normaliserCode}from"./acces/suiviCode";
 import CodePret from"./acces/CodePret";
 import{etatEssai,parrainDepuisUrl}from"./essai/essai";
 import PuzzleCarte from"./psycho/PuzzleCarte";
@@ -344,7 +344,7 @@ function MsgLuCode({K,id}){
 }
 // Code saisi par l'utilisateur : formateur (FO-), offert (OF-) ou délivré par l'administrateur après paiement.
 const activerCode=async(uid,saisie)=>{
-  const c=String(saisie||"").trim().toUpperCase();if(!c)return{err:"Entrez votre code"};
+  const c=normaliserCode(saisie);if(!c)return{err:"Entrez votre code"};
   const snap=await getDoc(doc(db,"users",uid));if(!snap.exists())return{err:"Profil introuvable."};
   const ud=snap.data();
   if(c.startsWith("FO-")){
@@ -356,8 +356,16 @@ const activerCode=async(uid,saisie)=>{
     notifier({dest:"admin",type:"message",titre:`Code offert utilisé : ${ud.nom||ud.mail||""}`,texte:`${c} · ${r.duree}`,vue:"ac",auteurNom:ud.nom||"",push:false});
     return{ok:true};
   }
-  if(ud.activationCode!==c)return{err:"Code incorrect."};
-  await updateDoc(doc(db,"users",uid),{abonnement:"actif",codeValide:true});
+  if(ud.activationCode!==c){
+    // L'administrateur voit ce qui a été saisi, pour aider l'apprenant
+    notifier({dest:"admin",type:"message",titre:`Activation échouée : ${ud.nom||ud.mail||""}`,texte:`Code saisi : ${c || "(vide)"}${ud.activationCode?` · code attendu : ${ud.activationCode}`:" · aucun code n'a encore été délivré à ce compte"}`,vue:"d",auteurNom:ud.nom||"",push:false});
+    return{err:ud.activationCode?"Code incorrect. Vérifiez-le (attention à 5 et S, 8 et B), ou touchez « Activer mon accès » sur votre accueil.":"Aucun code d'accès n'a encore été délivré à votre compte : il arrive après la validation de votre paiement."};
+  }
+  try{await updateDoc(doc(db,"users",uid),{abonnement:"actif",codeValide:true});}
+  catch(e){
+    notifier({dest:"admin",type:"message",titre:`Activation bloquée : ${ud.nom||ud.mail||""}`,texte:`Le code ${c} est correct mais l'enregistrement a échoué (${e.code||e.message}). Activez l'accès depuis la demande.`,vue:"d",auteurNom:ud.nom||"",push:false});
+    return{err:"L'activation n'a pas pu être enregistrée. L'équipe Éco-Campus est prévenue et va activer votre accès."};
+  }
   notifier({dest:"admin",type:"message",titre:`Accès activé : ${ud.nom||ud.mail||""}`,texte:`${c} · jusqu'au ${ud.dateExpiration?new Date(ud.dateExpiration).toLocaleDateString("fr-FR"):"—"}`,vue:"a",auteurNom:ud.nom||"",push:false});
   return{ok:true};
 };
@@ -2653,9 +2661,8 @@ function Auth({onL}){
     try{
       const snap=await getDoc(doc(db,"users",cred.user.uid));
       if(!snap.exists()){sB(false);return sE("Profil introuvable.");}
-      const u=snap.data();
-      if(u.activationCode!==c){sB(false);return sE("Code incorrect.");}
-      await updateDoc(doc(db,"users",cred.user.uid),{abonnement:"actif",codeValide:true});
+      const r=await activerCode(cred.user.uid,c);
+      if(r.err){sB(false);return sE(r.err);}
       sO("✓ Accès débloqué !");setTimeout(()=>onL(cred.user.uid,cred.user),700);
     }catch(e){sB(false);sE(e.message);}
   },[onL]);
@@ -5593,6 +5600,8 @@ export default function App(){
         if(snap.exists()){
           effacerSocial(); // retour de redirection Google/Facebook d'un compte existant : rien d'autre à faire
           const d=snap.data();
+          // Dernière connexion : aussi à la réouverture d'une session déjà ouverte (suivi des codes d'accès)
+          updateDoc(doc(db,"users",user.uid),{lastLogin:Date.now()}).catch(()=>{});
           if(d.role==="formateur"){sW({role:"formateur",uid:user.uid,user});}
           else{sW({role:"user",uid:user.uid,user});}
         } else sW(w=>w?.uid===user.uid?w:null); // profil en cours de création (inscription Google/Facebook)
