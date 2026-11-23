@@ -36,6 +36,8 @@ describe("Suivi d'une demande d'accès", () => {
   });
   test("saisie tolérante du code", () => {
     ["EC-AM55YKBN", "ec-am55ykbn", " EC - AM55 YKBN ", "EC AM55YKBN", "AM55YKBN", "EC—AM55YKBN", "ECAM55YKBN"].forEach(s => expect(normaliserCode(s)).toBe("EC-AM55YKBN"));
+    // Copié depuis un e-mail ou une messagerie : caractères invisibles et tirets insécables
+    ["EC\u2011AM55YKBN", "\u200BEC-AM55YKBN\u200B", "EC-AM55\u00A0YKBN\n", "Code : EC-AM55YKBN", "ＥＣ－ＡＭ５５ＹＫＢＮ", "EC\u2010AM55YKBN."].forEach(s => expect(normaliserCode(s)).toBe("EC-AM55YKBN"));
     expect(normaliserCode("of-abcd1234")).toBe("OF-ABCD1234");
     expect(normaliserCode("FO-XY12")).toBe("FO-XY12");
     expect(normaliserCode("")).toBe("");

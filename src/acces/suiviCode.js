@@ -6,12 +6,13 @@
 
 const ms = v => (v == null ? null : typeof v === "number" ? v : Date.parse(v) || null);
 
-// Saisie tolérante d'un code : majuscules, espaces et points ignorés, tirets typographiques remplacés ;
+// Saisie tolérante d'un code : majuscules ; caractères invisibles copiés avec le code (espaces insécables, espaces de
+// largeur nulle, retours à la ligne), points et autres signes ignorés ; tirets typographiques (‐ ‑ – — −) remplacés ;
 // « AM55YKBN » seul (8 caractères) est compris comme le code d'accès « EC-AM55YKBN ».
 export function normaliserCode(s) {
-  const c = String(s || "").toUpperCase().replace(/[\s.]/g, "").replace(/[–—_]/g, "-");
+  const c = String(s || "").normalize("NFKC").toUpperCase().replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D_]/g, "-").replace(/[^A-Z0-9-]/g, "");
   if (/^[A-Z0-9]{8}$/.test(c)) return "EC-" + c;
-  const m = c.match(/^(EC|OF|FO)-?([A-Z0-9]+)$/);
+  const m = c.match(/^(EC|OF|FO)-?([A-Z0-9]+)$/) || c.match(/(EC|OF|FO)-([A-Z0-9]{4,})$/); // « Code : EC-… » collé en entier
   return m ? `${m[1]}-${m[2]}` : c;
 }
 
