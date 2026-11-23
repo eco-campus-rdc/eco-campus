@@ -2841,6 +2841,9 @@ function UA({uid,onOut}){
   useEffect(()=>{if(uData)inscrireAnnuaire(db,{uid,nom:uData.nom,mail:auth.currentUser?.email||uData.mail});},[uid,uData?.nom,uData?.mail]);
   const myOpenAnswers=useMyOpenAnswers(uid);
   usePresence({uid,nom:uData?.nom,mail:auth.currentUser?.email||uData?.mail,role:"apprenant",vue:mod?`Module : ${mod.titre}`:VUE_LBL[vue]||vue});
+  // Exercice « Quel compte ? » à ouvrir directement (lien « Y aller » de la carte d'examen final)
+  const[exoCpt,sExoCpt]=useState(null);
+  useEffect(()=>{if(vue!=="cpt")sExoCpt(null);},[vue]);
   if(!uData||mL)return <div style={{minHeight:"100vh",background:K.bg}}><style>{mCss(K)}</style><Spin/></div>;
   // Accès complet : abonnement actif, ou essai complet en cours (date de création du compte Firebase, non modifiable)
   const abonne=uData.abonnement==="actif"&&!xp(uData.dateExpiration);
@@ -2851,6 +2854,13 @@ function UA({uid,onOut}){
   const pr=uData.progress||{},sc=uData.scores||{};
   // Parcours SYSCOHADA : modules ouverts dans l'ordre (acquis conservés), examens finaux N1 (Modules de cours) et N2 (ZAO, Guide des comptes)
   const etatN1=etatParcours("SYS-N1",aMods,{scores:sc,progress:pr}),etatN2=etatParcours("SYS-N2",[],{scores:sc,progress:pr});
+  // Élément d'un parcours SYSCOHADA à réussir : exercice « Quel compte ? » (ouvert directement), monographie ou module
+  const allerElement=cle=>{
+    if(/^CPT-/.test(cle)){sExoCpt(cle==="CPT-T"?0:+cle.slice(4));sV("cpt");}
+    else if(cle==="JRN-ZAO")sV("jrn");
+    else{const m=aMods.find(x=>x.id===cle);if(m)ouvrirModule(m);else sV("mods");}
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
   const ouvrirModule=m=>{const e=etatN1.elements.find(x=>x.cle===m.id);if(ok&&e&&!e.ouvert){sV("mods");return;}sM(m);};
   const nd=aMods.filter(m=>pr[m.id]==="done").length,gp=aMods.length?Math.round(nd/aMods.length*100):0;
   const save=async(modId,s,t)=>{try{await saveProgress(uid,modId,{s,t,pct:Math.round(s/t*100)});}catch(e){alert("Score non enregistré (connexion ?). Repassez l'évaluation une fois en ligne.");}};
@@ -2876,14 +2886,14 @@ function UA({uid,onOut}){
     }{vue==="stages"&&<StagePage stages={allStages} plats={allPlats} ok={ok}/>
     }{vue==="services"&&<ServicesPage user={uData}/>}
     {vue==="form"&&<MesFormations K={K} mob={mob} user={uData} mods={aMods} ok={ok} onGo={sV} onExam={sExam} onSub={()=>sSub(true)}/>}
-    {vue==="mods"&&<ModulesCours mods={aMods} pr={pr} sc={sc} ok={ok} vids={vids} onOpen={ouvrirModule} uid={uid} onSub={()=>sSub(true)} etat={etatN1} onExam={()=>sExam("SYS-N1")} onGo={sV}/>}
+    {vue==="mods"&&<ModulesCours mods={aMods} pr={pr} sc={sc} ok={ok} vids={vids} onOpen={ouvrirModule} uid={uid} onSub={()=>sSub(true)} etat={etatN1} onExam={()=>sExam("SYS-N1")} onGo={sV} onElement={allerElement}/>}
     {vue==="res"&&<MesResultats pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} abonne={abonne} mods={aMods} u={uData} uid={uid} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="psycho"&&<PsychoPage uid={uid} u={uData}/>}
     {vue==="param"&&<ParametresPage role="apprenant" uid={uid} data={uData} onOut={onOut} onGo={sV}/>}
     {vue==="ef"&&<EtatsFinanciers key="ef" sansRaccourcis db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)}/>}
-    {(vue==="jrn"||vue==="cpt")&&<CarteExamenFinal K={K} id="SYS-N2" etat={etatN2} ok={ok} onOuvrir={()=>sExam("SYS-N2")} onCertificat={()=>sV("res")}/>}
+    {(vue==="jrn"||vue==="cpt")&&<CarteExamenFinal K={K} id="SYS-N2" etat={etatN2} ok={ok} onOuvrir={()=>sExam("SYS-N2")} onCertificat={()=>sV("res")} onElement={allerElement}/>}
     {vue==="jrn"&&<EtatsFinanciers key="jrn" db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)} journal0/>}
-    {vue==="cpt"&&<EtatsFinanciers key="cpt" db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)} guide0/>}
+    {vue==="cpt"&&<EtatsFinanciers key={`cpt-${exoCpt==null?"":exoCpt}`} db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)} guide0 exo0={exoCpt}/>}
     {vue==="audio"&&<EcouterCours K={K} mob={mob} mods={aMods} pres={allPres.filter(estPublie)} ok={ok} onSub={()=>sSub(true)}/>}
     {vue==="fisc"&&<CodeImpots K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="fin"&&<FinanceEntreprise K={K} mob={mob} db={db} uid={uid} scores={uData.scores||{}} progress={uData.progress||{}} ok={ok} onSub={()=>sSub(true)} onGo={sV}/>}
@@ -3837,7 +3847,7 @@ function SousNav({groupes,vue,onGo,badges={},c1,c2}){
 }
 
 // ── MODULES DE COURS (rubrique Apprendre) : catalogue, recherche et filtre par matière ──
-function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo}){
+function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo,onElement}){
   const K=useK();
   const[pdfMod,setPdfMod]=useState(null),[fi,sF]=useState("Toutes"),[modQ,sModQ]=useState("");
   const mats=[...new Set(mods.map(m=>m.mat||"Général"))];
@@ -3896,7 +3906,7 @@ function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo}){
 
     {etat&&<>
       <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:13,color:K.t2,lineHeight:1.55,marginTop:16}}><i className="ti ti-route" style={{fontSize:17,color:K.em,marginTop:1}}/><span>Parcours certifiant SYSCOHADA Niveau 1 : les modules s'ouvrent dans l'ordre (le suivant quand le précédent est réussi à {SEUIL_ELEMENT} %). Le parcours comprend aussi l'exercice « Quel compte ? » toutes classes{onGo&&<> (<button onClick={()=>onGo("cpt")} className="bt" style={{background:"none",border:"none",padding:0,color:K.em,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>Guide des comptes</button>)</>}. Avec une moyenne d'au moins 80 %, l'examen final ouvre droit au certificat.</span></div>
-      <CarteExamenFinal K={K} id="SYS-N1" etat={etat} ok={ok} onOuvrir={onExam} onCertificat={onGo&&(()=>onGo("res"))}/>
+      <CarteExamenFinal K={K} id="SYS-N1" etat={etat} ok={ok} onOuvrir={onExam} onCertificat={onGo&&(()=>onGo("res"))} onElement={onElement}/>
     </>}
     {!ok&&onSub&&<div style={{display:"flex",justifyContent:"center",marginTop:16}}><Btn ch={LIB_ACCES} on={onSub}/></div>}
     {pdfMod&&<PdfV url={pdfMod.slideUrl} name={pdfMod.titre} onClose={()=>setPdfMod(null)} modId={pdfMod.id} uid={uid} showRating={true}/>}

@@ -13,7 +13,8 @@ import{cleTentatives,normaliser,dureeExamen,attente,demarrer,cloturer,abandonEnC
 
 const pctF=(etat,local)=>local!=null?local:etat.final;
 
-export function CarteExamenFinal({K,id,etat,ok,apercu,local,onOuvrir,onCertificat}){
+// onElement(cle) (facultatif) : ouvre l'élément du parcours qui reste à réussir (bouton « Y aller » de la liste « Il vous reste »).
+export function CarteExamenFinal({K,id,etat,ok,apercu,local,onOuvrir,onCertificat,onElement}){
   const x=EXAMENS[id],F=EXAMENS_FINAUX[id],p=pctF(etat,local),reussi=p!=null&&p>=SEUIL_ELEMENT;
   const ouvert=apercu||(ok&&etat.finalOuvert),n=etat.elements.length;
   const raison=ouvert?`Ouvert : ${x.nbQ} questions en ${dureeExamen(id)} minutes, note minimale ${SEUIL_ELEMENT} %, corrigé détaillé à la fin.`
@@ -28,10 +29,27 @@ export function CarteExamenFinal({K,id,etat,ok,apercu,local,onOuvrir,onCertifica
     </div>
     <div style={{fontWeight:800,fontSize:15.5,color:K.t1,lineHeight:1.3,margin:"4px 0"}}>{F.titre}</div>
     <div style={{fontSize:13,color:K.t3,lineHeight:1.55}}>{raison}</div>
+    {!ouvert&&ok&&!etat.tousReussis&&<ResteAFaire K={K} etat={etat} onElement={onElement}/>}
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
       <Bouton K={K} ico={ouvert?"player-play":"lock"} dis={!ouvert} ch={p!=null?"Repasser l'examen":"Passer l'examen final"} on={onOuvrir}/>
       {reussi&&onCertificat&&<Bouton K={K} v="g" ico="certificate" ch="Obtenir mon certificat" on={onCertificat}/>}
     </div>
+  </div>;
+}
+
+// Éléments encore à réussir avant l'examen final, avec leur note actuelle et un accès direct
+export function resteAFaire(etat){return(etat&&etat.elements||[]).filter(e=>!e.reussi);}
+function ResteAFaire({K,etat,onElement}){
+  const L=resteAFaire(etat);if(!L.length)return null;
+  return <div style={{marginTop:10,background:K.c2,border:`1px solid ${K.b0}`,borderRadius:12,padding:"10px 12px"}}>
+    <div style={{fontSize:12,fontWeight:800,color:K.t2,textTransform:"uppercase",letterSpacing:.4,marginBottom:6}}><i className="ti ti-list-check" style={{marginRight:5}}/>Il vous reste {L.length===1?"1 élément":`${L.length} éléments`} à réussir</div>
+    {L.map((e,i)=><div key={e.cle} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderTop:i?`1px solid ${K.b0}`:"none",flexWrap:"wrap"}}>
+      <div style={{flex:1,minWidth:160}}>
+        <div style={{fontWeight:800,fontSize:13.5,color:K.t1,lineHeight:1.35}}>{e.titre}</div>
+        <div style={{fontSize:12.5,color:e.pct!=null?K.er:K.t3}}>{e.pct!=null?`Meilleure note : ${e.pct} % · il faut ${SEUIL_ELEMENT} %`:e.ouvert?"Pas encore fait":`S'ouvre après « ${e.precedent} »`}</div>
+      </div>
+      {onElement&&e.ouvert&&<Bouton K={K} ico="arrow-right" ch={e.pct!=null?"Refaire":"Y aller"} on={()=>onElement(e.cle)} sx={{padding:"8px 13px",minHeight:38,fontSize:13}}/>}
+    </div>)}
   </div>;
 }
 

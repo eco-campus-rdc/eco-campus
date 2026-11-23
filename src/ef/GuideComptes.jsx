@@ -20,8 +20,8 @@ const SUBS_VISIBLES = 14;
 const sansNumero = t => t.replace(/^\s*\d+\s*[—–).-]\s*/, "");
 const sansPrefixe = t => { const r = t.replace(/^Ce qui change avec le SYSCOHADA révisé\s*:\s*/i, ""); return r.charAt(0).toUpperCase() + r.slice(1); };
 
-export default function GuideComptes({ K, mob, fiche, onScore, scores }) {
-  const [nav, sNav] = useState({ v: "accueil" }); // { v: accueil | classe | compte | annexe | reperes | cloture, k, c, sub }
+export default function GuideComptes({ K, mob, fiche, onScore, scores, depart }) {
+  const [nav, sNav] = useState(depart || { v: "accueil" }); // { v: accueil | classe | compte | annexe | reperes | cloture, k, c, sub }
   const [tousSubs, sTousSubs] = useState(false);
   const [plan, sPlan] = useState(null);
   const [classes, sClasses] = useState({});
