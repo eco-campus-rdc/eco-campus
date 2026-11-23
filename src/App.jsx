@@ -21,6 +21,8 @@ import Observateurs,{useObservateurs}from"./admin/Observateurs";
 import AdminEssai,{useConfigEssai}from"./essai/AdminEssai";
 import{BandeauEssai,FinEssai,CarteParrainage}from"./essai/BandeauEssai";
 import MesFilleuls from"./essai/MesFilleuls";
+import{etapeAcces,suiviCode}from"./acces/suiviCode";
+import CodePret from"./acces/CodePret";
 import{etatEssai,parrainDepuisUrl}from"./essai/essai";
 import PuzzleCarte from"./psycho/PuzzleCarte";
 import OuSeTrouve from"./psycho/OuSeTrouve";
@@ -333,6 +335,13 @@ function useConnexions(n=400){
 
 // ── FIRESTORE ACTIONS ─────────────────────────────────────────────────────────
 const saveUserData=async(uid,data)=>{await setDoc(doc(db,"users",uid),data,{merge:true});};
+// Message du code d'accès : lu ou non par l'apprenant (suivi des demandes, écran administrateur)
+function MsgLuCode({K,id}){
+  const[lu,sLu]=useState(null);
+  useEffect(()=>{if(!id)return;return onSnapshot(doc(db,"messages",id),s=>sLu(s.exists()?!!s.data().luApprenant:null),()=>sLu(null));},[id]);
+  if(!id||lu==null)return null;
+  return <div style={{display:"flex",gap:7,alignItems:"center",fontSize:12.5,color:lu?K.em:K.t3}}><i className={`ti ti-${lu?"eye-check":"eye-off"}`} style={{fontSize:15}}/>{lu?"Message lu par l'apprenant":"Message pas encore lu"}</div>;
+}
 // Code saisi par l'utilisateur : formateur (FO-), offert (OF-) ou délivré par l'administrateur après paiement.
 const activerCode=async(uid,saisie)=>{
   const c=String(saisie||"").trim().toUpperCase();if(!c)return{err:"Entrez votre code"};
@@ -348,7 +357,9 @@ const activerCode=async(uid,saisie)=>{
     return{ok:true};
   }
   if(ud.activationCode!==c)return{err:"Code incorrect."};
-  await updateDoc(doc(db,"users",uid),{abonnement:"actif",codeValide:true});return{ok:true};
+  await updateDoc(doc(db,"users",uid),{abonnement:"actif",codeValide:true});
+  notifier({dest:"admin",type:"message",titre:`Accès activé : ${ud.nom||ud.mail||""}`,texte:`${c} · jusqu'au ${ud.dateExpiration?new Date(ud.dateExpiration).toLocaleDateString("fr-FR"):"—"}`,vue:"a",auteurNom:ud.nom||"",push:false});
+  return{ok:true};
 };
 // QCM d'un module : meilleur score conservé (fusionScore : n séries, dernière tentative) — base des attestations
 const saveProgress=async(uid,modId,score)=>{
@@ -425,6 +436,7 @@ const sendMessage=async({apprenantUid,apprenantNom,from,fromNom,fromRole,texte,f
   const extrait=String(texte||"").slice(0,200);
   if(fromRole==="apprenant")notifier({dest:formateurUid||"admin",type:"message",titre:`Nouveau message de ${fromNom||apprenantNom||"un apprenant"}`,texte:extrait,vue:formateurUid?"fmsg":"msg",auteurNom:fromNom||apprenantNom||""});
   else notifier({dest:apprenantUid,type:"message",titre:`Nouveau message de ${fromNom||"l'équipe Éco-Campus"}`,texte:extrait,vue:"msg",auteurNom:fromNom||""});
+  return ref_.id;
 };
 const markMsgsRead=async(apprenantUid,side)=>{
   try{
@@ -2838,6 +2850,8 @@ function UA({uid,onOut}){
   if(mod)return W(<MV mod={mod} sc={sc[mod.id]} ok={ok} pr={pr} onQ={()=>sQ(mod)} onOpenQ={()=>sOpenQuiz(mod)} onMarkDone={()=>markDoneNoEval(mod.id)} doneNoEval={pr[mod.id]==="done"} openAnswer={myOpenAnswers.find(a=>a.modId===mod.id)} onBack={()=>sM(null)} onSub={()=>sSub(true)} vids={vids.filter(v=>v.mid===mod.id)} pdf={pdfs[mod.id]} uid={uid} uNom={uData.nom}/>,true);
   return W(<>
     <SousNav groupes={GROUPES_APPRENANT} vue={vue} onGo={sV}/>
+    {vue==="home"&&uData.abonnement==="demande"&&uData.activationCode&&!uData.codeValide&&<CodePret K={K} mob={mob} code={uData.activationCode} duree={DUR.find(d=>d.id===uData.dureeId)?.l} expiration={uData.dateExpiration?fD(uData.dateExpiration):null}
+      onActiver={async()=>{const r=await activerCode(uid,uData.activationCode);if(r&&r.ok)window.location.reload();return r;}}/>}
     {vue==="home"&&<BandeauEssai K={K} mob={mob} essai={essai} abonne={abonne} reussites={reussites} onSub={()=>sSub(true)}/>}
     {vue==="home"&&estObs&&<button onClick={()=>sV("tdb")} className="bt" style={{width:"100%",display:"flex",alignItems:"center",gap:12,textAlign:"left",background:"linear-gradient(135deg,#011B33,#1E4FA3)",color:"#fff",border:"none",borderRadius:16,padding:"14px 16px",marginBottom:14,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
       <i className="ti ti-chart-dots" style={{fontSize:26,flexShrink:0}}/><span style={{flex:1}}><span style={{display:"block",fontWeight:800,fontSize:15}}>Tableau de bord Éco-Campus</span><span style={{display:"block",fontSize:13,opacity:.85}}>Accès en lecture seule accordé par l'administration</span></span><i className="ti ti-chevron-right" style={{fontSize:20}}/></button>}
@@ -3538,7 +3552,7 @@ function Home({u,pr,sc,gp,nd,ok,mods,vids,onOpen,onSub,onVid,onPres,onStages,onE
       </div>;
     })}
     {/* Alertes */}
-    {!ok&&<div style={{background:u.abonnement==="expiré"?K.erBg:K.waBg,border:`1px solid ${u.abonnement==="expiré"?K.erBd:K.waBd}`,borderRadius:12,padding:"11px 14px",marginBottom:13,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}><div><div style={{fontWeight:700,fontSize:14,color:u.abonnement==="expiré"?K.er:K.wa,marginBottom:2}}>{u.abonnement==="expiré"?"Accès expiré":"Cours verrouillés"}</div><div style={{fontSize:13,color:K.t3}}>{u.abonnement==="demande"?"Demande en cours — code sous 24h.":u.abonnement==="expiré"?"Contactez Éco-Campus.":"Effectuez le paiement."}</div></div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{isSocial&&<Btn ch="J'ai un code" on={()=>sShowCode(true)} v="s" sm/>}{u.abonnement!=="demande"&&<Btn ch="Obtenir l'accès" on={onSub} v="w" sm/>}</div></div>}
+    {!ok&&<div style={{background:u.abonnement==="expiré"?K.erBg:K.waBg,border:`1px solid ${u.abonnement==="expiré"?K.erBd:K.waBd}`,borderRadius:12,padding:"11px 14px",marginBottom:13,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}><div><div style={{fontWeight:700,fontSize:14,color:u.abonnement==="expiré"?K.er:K.wa,marginBottom:2}}>{u.abonnement==="expiré"?"Accès expiré":"Cours verrouillés"}</div><div style={{fontSize:13,color:K.t3}}>{u.abonnement==="demande"?(u.activationCode&&!u.codeValide?"Votre code est prêt : activez-le en haut de l'accueil.":"Demande en cours — code sous 24h."):u.abonnement==="expiré"?"Contactez Éco-Campus.":"Effectuez le paiement."}</div></div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{isSocial&&<Btn ch="J'ai un code" on={()=>sShowCode(true)} v="s" sm/>}{u.abonnement!=="demande"&&<Btn ch="Obtenir l'accès" on={onSub} v="w" sm/>}</div></div>}
     {ok&&jr<=30&&jr>0&&u.dureeId!=="v"&&<div style={{background:K.waBg,border:`1px solid ${K.waBd}`,borderRadius:12,padding:"9px 14px",marginBottom:13,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}><div style={{fontSize:14,color:K.wa}}>⏰ Expire dans <b>{jr}j</b></div><Btn ch={PLAY_STORE?"Saisir un code":"Renouveler"} on={onSub} v="w" sm/></div>}
 
     {/* Bannière principale */}
@@ -4536,10 +4550,13 @@ function AA({onOut}){
     try{const c=(await getDoc(doc(db,coll,id))).data()||{};if(c.createdBy)notifier({dest:c.createdBy,type:"contenu",titre:`Contenu à revoir : ${c.titre||""}`,texte:reason?`Motif : ${reason}`:"Consultez vos contenus pour le corriger.",vue:type==="mod"?"mods":type==="pres"?"pres":"vids",auteurNom:"Éco-Campus RDC"});}catch(e){}
     sMsg({t:"o",m:"Contenu rejeté."});setTimeout(()=>sMsg({t:"",m:""}),3000);
   };
+  // Valider : le code est créé puis envoyé aussitôt (e-mail + message) ; l'apprenant l'active d'un geste depuis son accueil
   const genC=async(uid,did)=>{
-    sSav(true);const d=DUR.find(x=>x.id===did);const code=nC();
-    await saveUserData(uid,{activationCode:code,codeValide:false,dureeId:did,dateExpiration:dE(d.j)});
-    sSav(false);sVm(null);sCm({uid,code,d});
+    sSav(true);const d=DUR.find(x=>x.id===did);const code=nC(),exp=dE(d.j);
+    await saveUserData(uid,{activationCode:code,codeValide:false,dureeId:did,dateExpiration:exp,codeGenereLe:new Date().toISOString(),codeEnvoyeLe:null,codeEmailOk:null,codeMsgId:null});
+    const u=users.find(x=>x.uid===uid)||{uid};
+    await mL({...u,uid,activationCode:code,dureeId:did,dateExpiration:exp,codeValide:false});
+    sSav(false);sVm(null);sCm({uid,code,d,envoye:true});
   };
   const actD=async(uid,did)=>{
     sSav(true);const d=DUR.find(x=>x.id===did)||DUR[4];const code=nC();
@@ -4552,9 +4569,12 @@ function AA({onOut}){
   const delU=async uid=>{await deleteDoc(doc(db,"users",uid));sDm(null);};
   const mL=async u=>{
     const d=DUR.find(x=>x.id===u.dureeId);
-    const ok=await sendCodeEmail({to_email:u.mail,nom:u.nom,code:u.activationCode,duree:d?.l,expiration:fD(u.dateExpiration)});
-    sendMessage({apprenantUid:u.uid,apprenantNom:u.nom,from:"admin",fromNom:"Éco-Campus RDC",fromRole:"admin",texte:`🔑 Votre code d'accès à la plateforme est prêt !\n\nCode : ${u.activationCode}\nDurée : ${d?.l||"—"}\nExpire le : ${fD(u.dateExpiration)}\n\nPour l'activer : cliquez sur l'icône 🔑 en haut de votre écran, saisissez ce code, et validez.`});
-    if(ok)sMsg({t:"o",m:`✅ Envoyé par email et message à ${u.mail}`});else sMsg({t:"e",m:"⚠️ Message envoyé, mais l'email a échoué. Réessayez l'email."});
+    // Code pas encore activé : la durée repart du jour de l'envoi (l'apprenant ne perd pas de jours)
+    const exp=!u.codeValide&&d?dE(d.j):u.dateExpiration;
+    const ok=await sendCodeEmail({to_email:u.mail,nom:u.nom,code:u.activationCode,duree:d?.l,expiration:fD(exp)});
+    const msgId=await sendMessage({apprenantUid:u.uid,apprenantNom:u.nom,from:"admin",fromNom:"Éco-Campus RDC",fromRole:"admin",texte:`🔑 Votre paiement est validé : votre code d'accès est prêt !\n\nCode : ${u.activationCode}\nDurée : ${d?.l||"—"}\nExpire le : ${fD(exp)}\n\nPour l'activer : sur votre accueil, touchez « Activer mon accès » (ou l'icône 🔑 en haut de l'écran, puis saisissez ce code).`}).catch(()=>null);
+    await saveUserData(u.uid,{codeEnvoyeLe:new Date().toISOString(),codeEmailOk:!!ok,codeMsgId:msgId||null,...(exp!==u.dateExpiration?{dateExpiration:exp}:{})}).catch(()=>{});
+    if(ok)sMsg({t:"o",m:`✅ Code envoyé par e-mail et message à ${u.nom||u.mail}`});else sMsg({t:"e",m:"⚠️ Message envoyé, mais l'e-mail a échoué. Réessayez avec « Renvoyer »."});
     setTimeout(()=>sMsg({t:"",m:""}),3500);
   };
   const sc_=s=>s==="actif"?K.em:s==="demande"?K.wa:K.er,sl_=s=>s==="actif"?"Actif":s==="demande"?"Demande":"Inactif";
@@ -4566,14 +4586,22 @@ function AA({onOut}){
   const saveLiveFn=async()=>{sSav(true);await saveLive({on:live.on,url:rLU.current?.value?.trim()||"",titre:rLT.current?.value?.trim()||"",desc:rLD.current?.value?.trim()||""});sSav(false);sMsg({t:"o",m:"Direct enregistré."});setTimeout(()=>sMsg({t:"",m:""}),2000);};
   const addVidFn=async()=>{const url=rVU.current?.value?.trim()||"",titre=rVT.current?.value?.trim()||"";if(!titre||!url){alert("Titre et URL requis");return;}if(!pVid(url)){alert("URL invalide");return;}sSav(true);await saveVideo({titre,url,desc:rVD.current?.value?.trim()||"",mid:rVM.current?.value||null,gr});notifier({dest:"apprenants",type:"video",titre:`Nouvelle vidéo : ${titre}`,texte:rVD.current?.value?.trim()||"",vue:"videos",auteurNom:"Éco-Campus RDC"});sSav(false);sAV(false);[rVU,rVT,rVD].forEach(r=>{if(r.current)r.current.value="";});};
   const IB=({ico,t,on,v="s",lbl})=>{const c={p:[K.em,"#fff",K.em],s:[K.c2,K.t2,K.b1],d:[K.erBg,K.er,K.erBd],i:[K.inBg,K.in_,K.inBd],w:[K.waBg,K.wa,K.waBd]}[v];return <button onClick={on} title={t} className="bt" style={{display:"inline-flex",alignItems:"center",gap:5,height:34,minWidth:34,padding:lbl?"0 11px":0,justifyContent:"center",borderRadius:10,background:c[0],color:c[1],border:`1px solid ${c[2]}`,cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Outfit',sans-serif"}}><i className={`ti ti-${ico}`} style={{fontSize:16}}/>{lbl}</button>;};
-  const Acts=({u,st})=><>{st==="demande"&&<><IB ico="check" t="Valider l'accès" lbl="Valider" v="p" on={()=>sVm(u.uid)}/><IB ico="x" t="Refuser" v="d" on={()=>ref_(u.uid)}/></>}{st==="actif"&&<><IB ico="key" t="Voir le code" on={()=>sCm(u)}/><IB ico="send" t="Envoyer le code par e-mail et message" v="i" on={()=>mL(u)}/><IB ico="player-pause" t="Suspendre l'accès" v="w" on={()=>rev(u.uid)}/></>}{(st==="expiré"||st==="aucun")&&<IB ico="player-play" t="Réactiver / donner accès" lbl="Accès" on={()=>sVm(u.uid)}/>}<IB ico="trash" t="Supprimer le compte" v="d" on={()=>sDm(u.uid)}/></>;
+  const activerDirect=u=>{const d=DUR.find(x=>x.id===u.dureeId);if(window.confirm(`Activer tout de suite l'accès de ${u.nom||u.mail} (${d?.l||"durée demandée"}) sans attendre qu'il saisisse son code ?\nLa durée commence aujourd'hui.`))actD(u.uid,u.dureeId);};
+  const Acts=({u,st})=><>{st==="demande"&&etapeAcces(u)==="code"&&<><IB ico="send" t="Renvoyer le code par e-mail et message (la durée repart d'aujourd'hui)" lbl="Renvoyer" v="i" on={()=>mL(u)}/><IB ico="bolt" t="Activer directement, sans attendre l'apprenant" lbl="Activer" v="p" on={()=>activerDirect(u)}/><IB ico="x" t="Refuser" v="d" on={()=>ref_(u.uid)}/></>}{st==="demande"&&etapeAcces(u)!=="code"&&<><IB ico="check" t="Valider l'accès" lbl="Valider" v="p" on={()=>sVm(u.uid)}/><IB ico="x" t="Refuser" v="d" on={()=>ref_(u.uid)}/></>}{st==="actif"&&<><IB ico="key" t="Voir le code" on={()=>sCm(u)}/><IB ico="send" t="Envoyer le code par e-mail et message" v="i" on={()=>mL(u)}/><IB ico="player-pause" t="Suspendre l'accès" v="w" on={()=>rev(u.uid)}/></>}{(st==="expiré"||st==="aucun")&&<IB ico="player-play" t="Réactiver / donner accès" lbl="Accès" on={()=>sVm(u.uid)}/>}<IB ico="trash" t="Supprimer le compte" v="d" on={()=>sDm(u.uid)}/></>;
   const Av=({u,sz=38})=>{const cs=["#0A2A5C","#1E4FA3","#A3122A","#0D7A6B","#7C3AED","#C98A1B"];const c=cs[((u.nom||"U").charCodeAt(0)+(u.nom||"").length)%cs.length];return <div style={{width:sz,height:sz,borderRadius:"50%",background:`linear-gradient(135deg,${c},${c}B0)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:sz*.38,flexShrink:0}}>{(u.nom||"U").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div>;};
-  const Stat=({st})=><span style={{display:"inline-flex",alignItems:"center",gap:5,background:`${sc_(st)}14`,color:sc_(st),border:`1px solid ${sc_(st)}33`,borderRadius:99,padding:"3px 10px",fontSize:12,fontWeight:800,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:"50%",background:sc_(st)}}/>{sl_(st)}</span>;
+  const Stat=({st,u})=>{const enCode=st==="demande"&&u&&etapeAcces(u)==="code",c=enCode?K.in_:sc_(st);return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:`${c}14`,color:c,border:`1px solid ${c}33`,borderRadius:99,padding:"3px 10px",fontSize:12,fontWeight:800,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:"50%",background:c}}/>{enCode?"Code à activer":sl_(st)}</span>;};
+  // Suivi d'un code envoyé mais pas encore activé : créé, envoyé, message lu, reconnexion, activation
+  const fDH=v=>v?new Date(v).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+  function Suivi({u}){if(etapeAcces(u)!=="code")return null;
+    return <div style={{background:K.c2,border:`1px solid ${K.b0}`,borderRadius:12,padding:"9px 11px",margin:"2px 0 10px",display:"flex",flexDirection:"column",gap:4}}>
+      {suiviCode(u).map(e=><div key={e.k} style={{display:"flex",gap:7,alignItems:"center",fontSize:12.5,color:e.ok?K.em:e.alerte?K.wa:K.t3}}><i className={`ti ti-${e.ok?"circle-check":e.alerte?"alert-circle":"circle-dashed"}`} style={{fontSize:15}}/><span>{e.l}{e.date?` · ${fDH(e.date)}`:""}</span></div>)}
+      <MsgLuCode K={K} id={u.codeMsgId}/>
+    </div>;}
   const Code=({u,jr})=>u.activationCode?<div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,fontSize:13,color:K.em,background:K.emBg,border:`1px solid ${K.emBd}`,borderRadius:7,padding:"2px 7px"}}>{u.activationCode}</span>{u.dateExpiration&&<span style={{fontSize:12,fontWeight:700,color:jr<=7?K.er:jr<=30?K.wa:K.t3}}>{jr>0?`${jr} j restants`:"Expiré"}</span>}</div>:<span style={{color:K.t3,fontSize:13}}>—</span>;
   const Dem=({u})=>{if(u.abonnement!=="demande"||!(u.demandeOffre||u.demandeRef))return null;const o=offresA.find(x=>x.id===u.demandeOffre);
     return <div style={{display:"flex",flexWrap:"wrap",gap:"4px 10px",alignItems:"center",fontSize:12.5,color:K.t2,marginTop:3}}>{o&&<b style={{color:K.wa}}>{o.l} · {fUSD(o.prix)}</b>}{u.demandeRef&&<span>Réf. <b style={{fontFamily:"'JetBrains Mono',monospace",color:K.t1}}>{u.demandeRef}</b></span>}{u.demandeTel&&<span>{u.demandeTel}</span>}</div>;};
-  function RC({u}){const ex=xp(u.dateExpiration)&&u.abonnement==="actif",st=ex?"expiré":u.abonnement,jr=jR(u.dateExpiration);return <div style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:18,padding:"14px",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Av u={u}/><div style={{flex:1,minWidth:0}}><div style={{color:K.t1,fontWeight:800,fontSize:15}}>{u.nom}</div><div style={{color:K.t3,fontSize:12.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.mail}</div><Dem u={u}/></div><Stat st={st}/></div>{u.activationCode&&<div style={{marginBottom:10}}><Code u={u} jr={jr}/></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Acts u={u} st={st}/></div></div>;}
-  function RR({u}){const ex=xp(u.dateExpiration)&&u.abonnement==="actif",st=ex?"expiré":u.abonnement,jr=jR(u.dateExpiration);return <div className="ar" style={{borderBottom:`1px solid ${K.b0}`}}><div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}><Av u={u} sz={36}/><div style={{minWidth:0}}><div style={{color:K.t1,fontWeight:800,fontSize:14.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.nom}</div><div style={{color:K.t3,fontSize:12}}>Inscrit le {u.createdAt||"—"}</div><Dem u={u}/></div></div><div style={{color:K.t2,fontSize:13.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.mail}</div><div><Stat st={st}/></div><div><Code u={u} jr={jr}/></div><div style={{display:"flex",gap:5,justifyContent:"flex-end",flexWrap:"wrap"}}><Acts u={u} st={st}/></div></div>;}
+  function RC({u}){const ex=xp(u.dateExpiration)&&u.abonnement==="actif",st=ex?"expiré":u.abonnement,jr=jR(u.dateExpiration);return <div style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:18,padding:"14px",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Av u={u}/><div style={{flex:1,minWidth:0}}><div style={{color:K.t1,fontWeight:800,fontSize:15}}>{u.nom}</div><div style={{color:K.t3,fontSize:12.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.mail}</div><Dem u={u}/></div><Stat st={st} u={u}/></div>{u.activationCode&&<div style={{marginBottom:8}}><Code u={u} jr={jr}/></div>}<Suivi u={u}/><div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Acts u={u} st={st}/></div></div>;}
+  function RR({u}){const ex=xp(u.dateExpiration)&&u.abonnement==="actif",st=ex?"expiré":u.abonnement,jr=jR(u.dateExpiration);return <div className="ar" style={{borderBottom:`1px solid ${K.b0}`}}><div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}><Av u={u} sz={36}/><div style={{minWidth:0}}><div style={{color:K.t1,fontWeight:800,fontSize:14.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.nom}</div><div style={{color:K.t3,fontSize:12}}>Inscrit le {u.createdAt||"—"}</div><Dem u={u}/><Suivi u={u}/></div></div><div style={{color:K.t2,fontSize:13.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.mail}</div><div><Stat st={st} u={u}/></div><div><Code u={u} jr={jr}/></div><div style={{display:"flex",gap:5,justifyContent:"flex-end",flexWrap:"wrap"}}><Acts u={u} st={st}/></div></div>;}
   function Liste({list,empty}){if(list.length===0)return <div style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:16,padding:"38px",textAlign:"center"}}><div style={{fontSize:26,marginBottom:7,animation:"fl 3s ease-in-out infinite"}}>👤</div><div style={{color:K.t3,fontSize:14}}>{empty}</div></div>;if(mob)return <div>{list.map(u=><RC key={u.uid} u={u}/>)}</div>;return <div style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:16,overflow:"hidden"}}><div className="ah" style={{background:K.c2,borderBottom:`1px solid ${K.b0}`,color:K.t3,fontSize:12,fontWeight:800,textTransform:"uppercase",letterSpacing:".6px"}}><div>Apprenant</div><div>E-mail</div><div>Statut</div><div>Accès</div><div style={{textAlign:"right"}}>Actions</div></div>{list.map(u=><RR key={u.uid} u={u}/>)}</div>;}
   function ModEditor({mod,onSave,onCancel}){
     const isNew=!mod.id;const[qs,sQs]=useState(mod.q?JSON.parse(JSON.stringify(mod.q)):[{q:"",r:["","","",""],b:0}]);
@@ -4884,7 +4912,7 @@ function AA({onOut}){
 
         </div>;
       })()}
-      {["d","a","e","t"].includes(tab)&&<><div style={{marginBottom:10}}><input type="text" placeholder="🔍 Rechercher un nom ou un e-mail…" defaultValue="" onChange={e=>sQ(e.target.value)} style={{padding:"11px 14px",background:K.card,border:`1px solid ${K.b1}`,boxShadow:K.sh,borderRadius:12,color:K.t1,fontSize:15,outline:"none",width:"100%",maxWidth:420,fontFamily:"'Outfit',sans-serif",caretColor:K.em,minHeight:38}} onFocus={e=>e.target.style.borderColor=K.emBd} onBlur={e=>e.target.style.borderColor=K.b0}/></div>{tab==="d"&&nD>0&&<div style={{background:K.waBg,border:`1px solid ${K.waBd}`,borderRadius:12,padding:"11px 14px",marginBottom:12,fontSize:14,color:K.t1,display:"flex",gap:8,alignItems:"center"}}><i className="ti ti-bulb" style={{fontSize:18,color:K.wa}}/>Vérifiez le paiement, puis <b>Valider</b> → choisissez la durée → le code est créé → envoyez-le avec <i className="ti ti-send"/>.</div>}<Liste list={byT[tab]||fl} empty="Aucun résultat"/></>}
+      {["d","a","e","t"].includes(tab)&&<><div style={{marginBottom:10}}><input type="text" placeholder="🔍 Rechercher un nom ou un e-mail…" defaultValue="" onChange={e=>sQ(e.target.value)} style={{padding:"11px 14px",background:K.card,border:`1px solid ${K.b1}`,boxShadow:K.sh,borderRadius:12,color:K.t1,fontSize:15,outline:"none",width:"100%",maxWidth:420,fontFamily:"'Outfit',sans-serif",caretColor:K.em,minHeight:38}} onFocus={e=>e.target.style.borderColor=K.emBd} onBlur={e=>e.target.style.borderColor=K.b0}/></div>{tab==="d"&&nD>0&&<div style={{background:K.waBg,border:`1px solid ${K.waBd}`,borderRadius:12,padding:"11px 14px",marginBottom:12,fontSize:14,color:K.t1,display:"flex",gap:9,alignItems:"flex-start",lineHeight:1.5}}><i className="ti ti-bulb" style={{fontSize:18,color:K.wa,marginTop:2,flexShrink:0}}/><span><b>1.</b> Vérifiez le paiement, puis <b>Valider</b> et choisissez la durée : le code est créé et <b>envoyé aussitôt</b> (e-mail et message). <b>2.</b> L'apprenant l'active d'un geste sur son accueil ; la demande passe alors dans « Actifs ». En attendant, la carte indique <b>« Code à activer »</b> et le suivi (envoi, message lu, reconnexion) ; vous pouvez <b>Renvoyer</b> le code ou l'<b>Activer</b> directement.</span></div>}<Liste list={byT[tab]||fl} empty="Aucun résultat"/></>}
       {tab==="s"&&<div style={{animation:"up .25s ease"}}><div style={{fontFamily:"'Fraunces',serif",fontWeight:700,fontSize:21,letterSpacing:"-.3px",lineHeight:1.2,color:K.t1,marginBottom:10}}>Performance modules</div>{users.length===0?<div style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:16,padding:"38px",textAlign:"center"}}><div style={{color:K.t3,fontSize:14}}>Aucune donnée.</div></div>:<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>{mods.map(m=>{const at=users.filter(u=>u.scores?.[m.id]),av=at.length?Math.round(at.reduce((a,u)=>a+u.scores[m.id].pct,0)/at.length):0,pa=at.filter(u=>u.scores[m.id].pct>=SEUIL_ELEMENT).length;return <div key={m.id} style={{background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:16,padding:"10px 12px"}}><div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}><div style={{width:24,height:24,borderRadius:7,background:`${m.col}18`,border:`1px solid ${m.col}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{icoEl(m.ico,m.col,14)}</div><div><div style={{color:K.t1,fontWeight:700,fontSize:13}}>{m.titre}</div><div style={{color:K.t3,fontSize:10,fontFamily:"'JetBrains Mono',monospace"}}>{m.code}</div></div></div><div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:K.t3,marginBottom:4,fontFamily:"'JetBrains Mono',monospace"}}><span>{at.length} tentatives</span><span>{pa} réussi · {av}%</span></div><Bar p={av} col={m.col} h={3}/></div>;})}</div>}<SuiviExercices K={K} mob={mob} users={users.filter(u=>u.role!=="formateur"&&u.mail!==ADM_EMAIL)}/></div>}
       {tab==="m"&&<div style={{animation:"up .25s ease"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}><div><div style={{fontFamily:"'Fraunces',serif",fontWeight:700,fontSize:21,letterSpacing:"-.3px",lineHeight:1.2,color:K.t1}}>Gestion des cours</div><div style={{color:K.t3,fontSize:13,marginTop:2}}>{mods.length} modules · {mods.filter(m=>m.on!==false).length} actifs</div></div><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>{mods.length===0&&<Btn ch="🚀 Initialiser SYSCOHADA" on={seedModules} v="i" sx={{minHeight:38,fontSize:13}}/>}<Btn ch="➕ Nouveau" on={()=>{sEM(null);sNM(true);}} sx={{minHeight:38,fontSize:14}}/></div></div>
