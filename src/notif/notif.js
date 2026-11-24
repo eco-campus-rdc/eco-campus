@@ -102,6 +102,20 @@ export async function toutMarquerLu(db, uid) {
   try { await setDoc(doc(db, "notifEtat", uid), { vu: Date.now(), lues: {} }); } catch (e) { console.log("toutMarquerLu", e.message); }
 }
 
+// Annonces de l'application, écrites dans le code (aucune écriture Firestore) : elles s'affichent dans la cloche
+// du public visé pendant leur période, comme une notification ordinaire (non lue jusqu'à l'ouverture, état dans notifEtat).
+// public : "apprenants", "formateurs" ou "all" ; t : date de l'annonce ; fin : date de retrait automatique.
+export const ANNONCES_APP = [
+  { id: "app-sys1-refonte-2026-11", public: "apprenants", type: "module", t: Date.UTC(2026, 10, 24, 8), fin: Date.UTC(2027, 1, 1),
+    titre: "Nouveau : le SYSCOHADA Niveau 1 refait en 12 modules",
+    texte: "Ancien parcours commencé ? Reprenez au module 1, gratuit (« Quel compte ? » reste acquis). Du cadre OHADA à la clôture : écritures en francs congolais, audio et 15 questions par module.",
+    vue: "mods", auteurNom: "Éco-Campus RDC" },
+];
+export function annoncesApp(role, now = Date.now()) {
+  const pub = role === "admin" ? null : role === "formateur" ? "formateurs" : "apprenants";
+  return ANNONCES_APP.filter(a => pub && (a.public === "all" || a.public === pub) && now >= a.t && now < a.fin).map(({ public: _p, fin: _f, ...a }) => a);
+}
+
 // Rappels calculés localement (non stockés) : abonnement bientôt expiré
 export function rappelsLocaux(u) {
   const R = [];

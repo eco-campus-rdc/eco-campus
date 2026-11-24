@@ -1,13 +1,15 @@
 import React,{useState,useEffect,useRef}from"react";
 import{createPortal}from"react-dom";
-import{TYPES,useNotifications,useNotifEtat,estLue,marquerLue,toutMarquerLu,rappelsLocaux,depuis}from"./notif";
+import{TYPES,useNotifications,useNotifEtat,estLue,marquerLue,toutMarquerLu,rappelsLocaux,annoncesApp,depuis}from"./notif";
 
 // Cloche de notifications : badge des non-lues, panneau (liste, tout marquer lu), ouverture de la vue liée.
 // Les réglages (push, copie e-mail) sont dans Paramètres ; l'effacement est réservé à l'administrateur.
 // Sur téléphone, le panneau est rendu dans <body> : les barres de navigation ont un backdrop-filter,
 // qui ferait positionner un élément « fixed » par rapport à la barre au lieu de l'écran.
 export default function Cloche({K,db,uid,role,user,mob,onGo,taille=30}){
-  const liste=useNotifications(db,uid,role),etat=useNotifEtat(db,uid);
+  const recues=useNotifications(db,uid,role),etat=useNotifEtat(db,uid);
+  // Notifications reçues et annonces de l'application, de la plus récente à la plus ancienne
+  const liste=[...annoncesApp(role),...recues].sort((a,b)=>(b.t||0)-(a.t||0));
   const[open,sOpen]=useState(false);const ref=useRef(null),refP=useRef(null);
   const tout=[...rappelsLocaux(user),...liste];
   const nonLues=tout.filter(n=>!n.local&&!estLue(n,etat)).length+tout.filter(n=>n.local).length;

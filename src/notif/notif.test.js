@@ -1,4 +1,4 @@
-import { destsPour, estLue, rappelsLocaux, depuis } from "./notif";
+import { destsPour, estLue, rappelsLocaux, annoncesApp, ANNONCES_APP, depuis } from "./notif";
 import { recommandations } from "./Recommandations";
 
 test("destinataires lus par chaque rôle", () => {
@@ -35,4 +35,20 @@ test("recommandations : accès, QCM à refaire, module suivant du SYSCOHADA Nive
   const R2 = recommandations({ pr: {}, sc: { "SY-S1": { pct: 80 }, "SY-S2": { pct: 75 } }, ok: true });
   expect(R2[0]).toMatchObject({ k: "suivant", act: "n1" });
   expect(R2[0].mod.id).toBe("S3");
+});
+
+test("annonces de l'application : public visé, période d'affichage, lues comme une notification", () => {
+  const a = ANNONCES_APP.find(x => x.id === "app-sys1-refonte-2026-11");
+  expect(a).toMatchObject({ vue: "mods", type: "module" });
+  const pendant = a.t + 864e5;
+  expect(annoncesApp("apprenant", pendant).map(x => x.id)).toContain(a.id);
+  expect(annoncesApp("formateur", pendant).map(x => x.id)).not.toContain(a.id);
+  expect(annoncesApp("admin", pendant)).toEqual([]);
+  expect(annoncesApp("apprenant", a.t - 1000)).toEqual([]);
+  expect(annoncesApp("apprenant", a.fin + 1000)).toEqual([]);
+  const n = annoncesApp("apprenant", pendant)[0];
+  expect(n.public).toBeUndefined(); expect(n.titre.length).toBeLessThanOrEqual(120);
+  expect(estLue(n, { vu: 0, lues: {} })).toBe(false);
+  expect(estLue(n, { vu: 0, lues: { [a.id]: true } })).toBe(true);
+  expect(estLue(n, { vu: a.t + 1, lues: {} })).toBe(true); // « Tout marquer comme lu »
 });
