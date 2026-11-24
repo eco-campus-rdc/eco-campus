@@ -10,6 +10,7 @@ import{SCHEMAS_PARCS}from"../parcs/CarteParcs";
 import{SCHEMAS_TRAVAIL}from"../travail/Simulateur";
 import{SCHEMAS_ETHIQUE}from"../ethique/Caricature";
 import{SCHEMAS_MINES}from"../mines/Simulateur";
+import{SCHEMAS_SYS1}from"../syscohada/Journal";
 import{liquidationTVA}from"./tva";
 import{LIB_ACCES}from"../acces/plateforme";
 import Objectifs,{ObjectifsModule}from"../parcours/Objectifs";
@@ -213,7 +214,7 @@ function Tva({K,col,defaut={}}){
     </div>
   </div>;
 }
-const SCHEMAS={flux:Flux,chronologie:Chronologie,arbre:Arbre,tableau:Tableau,bareme:Bareme,chaine:Chaine,cartes:Cartes,paie:Paie,tva:Tva,...SIMULATEURS_EDUF,...SCHEMAS_PARCS,...SCHEMAS_TRAVAIL,...SCHEMAS_ETHIQUE,...SCHEMAS_MINES};
+const SCHEMAS={flux:Flux,chronologie:Chronologie,arbre:Arbre,tableau:Tableau,bareme:Bareme,chaine:Chaine,cartes:Cartes,paie:Paie,tva:Tva,...SIMULATEURS_EDUF,...SCHEMAS_PARCS,...SCHEMAS_TRAVAIL,...SCHEMAS_ETHIQUE,...SCHEMAS_MINES,...SCHEMAS_SYS1};
 
 // ── Blocs de leçon ──────────────────────────────────────────────────────────────
 export function Bloc({K,b,col}){

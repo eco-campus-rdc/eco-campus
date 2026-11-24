@@ -1,8 +1,8 @@
 import { OBJECTIFS_MODULES, objectifsModule, INTRO_MODULE } from "./objectifsModules";
-const { FISC, FIN, SYC, BQ, EF, DT, ETH, MIN } = require("../attest/regles");
+const { FISC, FIN, SYC, BQ, EF, DT, ETH, MIN, SYS1 } = require("../attest/regles");
 
 const infinitif = s => /^(?:(?:Se |S')[a-zé]|[A-ZÉ])[a-zéèêàâîïôûç]*(er|ir|re|oir)\b/.test(s);
-const ids = [...FISC, ...FIN, ...SYC, ...BQ, ...EF, ...DT, ...ETH, ...MIN].map(([id]) => id);
+const ids = [...FISC, ...FIN, ...SYC, ...BQ, ...EF, ...DT, ...ETH, ...MIN, ...SYS1].map(([id]) => id);
 const codesN1 = ["M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10"];
 
 describe("Objectifs des modules", () => {

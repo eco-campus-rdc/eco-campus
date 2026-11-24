@@ -10,7 +10,9 @@ import{useLecture,dureeMinLecture,FinLecon,allerFinLecon}from"./lecture";
 // ══════════════════ PAGE D'UN PARCOURS À MODULES (SYCEBNL, comptabilité bancaire…) ══════════════════
 // Chemin vertical : modules ouverts dans l'ordre (le suivant à SEUIL_ELEMENT %, acquis conservés), leçon en blocs, schémas,
 // narration audio et évaluation (séries de NB_Q), puis examen final (EXAMENS[id], coefficient 2) et certificat avec relevé.
-// cfg : { id, modules, cle(idModule), audio(mod), nom, hero: { fond, ico, kicker, titre, texte }, libre, libreTexte?, source, niveaux? }
+// cfg : { id, modules, cle(idModule), audio(mod), nom, hero: { fond, ico, kicker, titre, texte }, libre, libreTexte?, source, niveaux?, extras? }
+// extras (facultatif) : éléments du parcours hors modules, placés avant l'examen final : [{ cle, ico, titre, resume, bouton, exo }] ;
+// onExo(exo) ouvre l'exercice correspondant (ex. « Quel compte ? » du Guide des comptes).
 // niveaux (facultatif) : [{ id, label, n, col, ico, d }] ; chaque module porte alors mod.niveau et la liste est regroupée par niveau.
 // apercu : administrateur ou formateur, tout est ouvert.
 const NB_Q=10;
@@ -18,7 +20,8 @@ const NB_Q=10;
 const Pastille=({K,pct})=>{if(pct==null)return null;const ok=pct>=SEUIL_ELEMENT;
   return <span style={{fontSize:12,fontWeight:800,borderRadius:99,padding:"3px 9px",background:ok?K.emBg:K.erBg,color:ok?K.em:K.er,border:`1px solid ${ok?K.emBd:K.erBd}`,whiteSpace:"nowrap"}}>{pct} %</span>;};
 
-export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},ok,onSub,onGo,apercu=false}){
+// apres (facultatif) : contenu affiché sous le parcours, sur la page d'accueil du parcours seulement.
+export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},ok,onSub,onGo,onExo,apres,apercu=false}){
   const MODS=cfg.modules,X=EXAMENS[cfg.id],CLE_F=X.cle;
   const niv=m=>cfg.niveaux&&m&&cfg.niveaux.find(n=>n.id===m.niveau);
   const[open,sOpen]=useState(null),[mode,sMode]=useState("lecon"),[loc,sLoc]=useState({});
@@ -81,7 +84,8 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
 
   // ── Accueil du parcours ───────────────────────────────────────────────────────
   const sf=tous[CLE_F],finalReussi=sf&&sf.pct>=SEUIL_ELEMENT;
-  const pctParcours=Math.round((nbReussis+(finalReussi?1:0))/(MODS.length+1)*100);
+  const nbModsReussis=MODS.filter(m=>{const e=em(m.id);return e&&e.reussi;}).length;
+  const pctParcours=Math.round((nbReussis+(finalReussi?1:0))/(etat.elements.length+1)*100);
   return <div style={{maxWidth:860,margin:"0 auto",animation:"fadeIn .3s ease"}}>
     <div style={{background:cfg.hero.fond,borderRadius:20,padding:mob?"20px 18px":"26px 28px",color:"#fff",marginBottom:16,position:"relative",overflow:"hidden"}}>
       <i className={`ti ti-${cfg.hero.ico}`} style={{position:"absolute",right:-10,bottom:-22,fontSize:150,opacity:.1}}/>
@@ -90,7 +94,7 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
       <div style={{fontSize:14.5,opacity:.92,lineHeight:1.55,maxWidth:620}}>{cfg.hero.texte} Chaque module s'ouvre quand le précédent est réussi à {SEUIL_ELEMENT} %. Avec une moyenne d'au moins {SEUIL_MOYENNE} %, vous accédez à l'examen final de {X.nbQ} questions, puis au <b>certificat</b> et à son <b>relevé de notes</b>.</div>
       <div style={{height:8,background:"rgba(255,255,255,.2)",borderRadius:99,overflow:"hidden",margin:"14px 0 10px",maxWidth:420}}><div style={{width:`${pctParcours}%`,height:"100%",background:"#fff",borderRadius:99}}/></div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        <span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}>{nbReussis} / {MODS.length} modules réussis</span>
+        <span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}>{nbModsReussis} / {MODS.length} modules réussis</span>
         <span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}>Moyenne des modules : {moyFaites==null?"—":`${moyFaites} %`}</span>
         <span style={{background:"rgba(255,255,255,.16)",borderRadius:99,padding:"6px 12px",fontWeight:800,fontSize:13}}><i className="ti ti-headphones" style={{marginRight:4}}/>Cours audio</span>
       </div>
@@ -134,6 +138,26 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
             </div>
           </div>
         </div></React.Fragment>;})}
+      {/* Éléments hors modules (exercices) */}
+      {(cfg.extras||[]).map(x=>{const e=etat.elements.find(y=>y.cle===x.cle)||{},lk=!apercu&&(!ok||!e.ouvert);
+        const colI=e.reussi?K.em:lk?K.t3:e.pct!=null?K.er:K.in_;
+        return <div key={x.cle} style={{display:"flex",gap:12,alignItems:"stretch"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:34,flexShrink:0}}>
+            <div style={{width:34,height:34,borderRadius:"50%",background:e.reussi?K.emBg:K.c2,border:`2px solid ${colI}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><i className={`ti ti-${e.reussi?"circle-check":lk?"lock":x.ico||"pencil"}`} style={{fontSize:17,color:colI}}/></div>
+            <div style={{flex:1,width:2,background:e.reussi?K.em:K.b1,minHeight:12}}/>
+          </div>
+          <div style={{flex:1,minWidth:0,background:K.card,border:`1px solid ${K.b0}`,boxShadow:K.sh,borderRadius:16,padding:"13px 15px",marginBottom:10,borderLeft:`4px solid ${K.in_}`,opacity:lk?.72:1}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+              <div style={{fontSize:11.5,fontWeight:800,color:K.in_,letterSpacing:.6,textTransform:"uppercase"}}>Exercice du parcours</div>
+              <Pastille K={K} pct={e.pct}/>
+            </div>
+            <div style={{fontWeight:800,fontSize:15.5,color:K.t1,lineHeight:1.3,margin:"3px 0 4px"}}>{x.titre}</div>
+            <div style={{fontSize:13,color:K.t3,lineHeight:1.5}}>{x.resume}</div>
+            {!ok&&!apercu?<div style={{fontSize:12,color:K.wa,fontWeight:700,marginTop:6}}><i className="ti ti-lock" style={{marginRight:3}}/>Accès abonné</div>
+              :!e.ouvert&&!apercu?<div style={{fontSize:12,color:K.wa,fontWeight:700,marginTop:6}}><i className="ti ti-lock" style={{marginRight:3}}/>S'ouvre quand le dernier module est réussi à {SEUIL_ELEMENT} %</div>
+              :onExo&&<div style={{marginTop:9}}><Bouton K={K} ico="arrow-right" ch={e.pct!=null&&!e.reussi?"Refaire l'exercice":x.bouton||"Faire l'exercice"} on={()=>onExo(x.exo)} sx={{padding:"8px 13px",minHeight:38,fontSize:13}}/></div>}
+          </div>
+        </div>;})}
       {/* Examen final */}
       <div style={{display:"flex",gap:12,alignItems:"stretch"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:34,flexShrink:0}}>
@@ -148,7 +172,7 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
           <div style={{fontSize:13,color:K.t3,lineHeight:1.55}}>
             {finalOuvert?`Ouvert. Note minimale ${SEUIL_ELEMENT} % ; corrigé détaillé à la fin.`
               :!ok&&!apercu?"Réservé aux abonnés."
-              :!etat.tousReussis?`S'ouvre quand les ${MODS.length} modules sont réussis à ${SEUIL_ELEMENT} % au moins (${nbReussis} / ${MODS.length} pour l'instant).`
+              :!etat.tousReussis?`S'ouvre quand ${cfg.extras?`les ${MODS.length} modules et l'exercice sont réussis`:`les ${MODS.length} modules sont réussis`} à ${SEUIL_ELEMENT} % au moins (${nbReussis} / ${etat.elements.length} pour l'instant).`
               :`Moyenne des modules ${etat.moyenne} % : portez-la à ${SEUIL_MOYENNE} % au moins (refaites les évaluations les plus faibles) pour ouvrir l'examen.`}
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
@@ -160,8 +184,9 @@ export default function ParcoursModules({cfg,K,mob,db,uid,scores={},progress={},
     </div>
     <Carte K={K} sx={{background:K.c2,boxShadow:"none",marginTop:6}}>
       <div style={{fontWeight:800,fontSize:14,color:K.t1,marginBottom:6}}><i className="ti ti-certificate" style={{color:"#B7791F",marginRight:6}}/>Certificat et relevé de notes</div>
-      <div style={{fontSize:13,color:K.t2,lineHeight:1.6}}>Le certificat de réussite est délivré lorsque chaque évaluation ({MODS.length} modules et examen final) atteint {SEUIL_ELEMENT} % et que la moyenne pondérée (examen coefficient {COEF_FINAL}) atteint {SEUIL_MOYENNE} %. Mentions : Bien (80 %), Très bien (90 %), Excellent (95 %). Le PDF comprend le certificat numéroté avec QR code de vérification et, en page 2, le relevé de notes détaillé. À demander dans « Mes résultats ».</div>
+      <div style={{fontSize:13,color:K.t2,lineHeight:1.6}}>Le certificat de réussite est délivré lorsque chaque évaluation ({MODS.length} modules{cfg.extras?", l'exercice":""} et examen final) atteint {SEUIL_ELEMENT} % et que la moyenne pondérée (examen coefficient {COEF_FINAL}) atteint {SEUIL_MOYENNE} %. Mentions : Bien (80 %), Très bien (90 %), Excellent (95 %). Le PDF comprend le certificat numéroté avec QR code de vérification et, en page 2, le relevé de notes détaillé. À demander dans « Mes résultats ».</div>
       <div style={{fontSize:12,color:K.t3,lineHeight:1.55,marginTop:8}}>{cfg.source}</div>
     </Carte>
+    {apres}
   </div>;
 }

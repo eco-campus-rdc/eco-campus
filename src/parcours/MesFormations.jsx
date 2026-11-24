@@ -10,8 +10,8 @@ import Objectifs from"./Objectifs";
 
 // Ordre conseillé et présentation (les titres et noms courts viennent de PARCOURS, comme sur les certificats)
 export const FORMATIONS = [
-  { id: "SYS-N1", ico: "book-2", col: "#0A2A5C", niveau: "Débutant", libre: false,
-    resume: "Principes comptables, plan de comptes, écritures courantes, TVA, paie, amortissements et clôture." },
+  { id: "SYS-N1", ico: "book-2", col: "#0A2A5C", niveau: "Débutant", libre: "S1",
+    resume: "12 modules dans l'ordre : cadre OHADA, partie double, bilan, résultat, achats et ventes, TVA, effets, stocks, paie, immobilisations, provisions et clôture, avec écritures au journal." },
   { id: "SYS-N2", ico: "notebook", col: "#1D4ED8", niveau: "Intermédiaire", libre: false,
     resume: "Tenir la comptabilité d'une société sur un exercice complet (ZAO IMMO SARL) et maîtriser l'imputation classe par classe." },
   { id: "FISC", ico: "receipt-tax", col: "#A3122A", niveau: "Intermédiaire", libre: "F1",

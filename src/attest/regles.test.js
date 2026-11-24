@@ -1,4 +1,4 @@
-import { FISC, FIN, SYC, BQ, EF, DT, etatSyc, etatParcours, EXAMENS, PARCOURS, SEUIL_ELEMENT, SEUIL_MOYENNE, elementsParcours, evaluer, mention, numeroAttestation, numeroValide } from "./regles";
+import { FISC, FIN, SYC, BQ, EF, DT, SYS1, etatSyc, etatParcours, EXAMENS, PARCOURS, SEUIL_ELEMENT, SEUIL_MOYENNE, elementsParcours, evaluer, mention, numeroAttestation, numeroValide } from "./regles";
 import { MODULES_FISC } from "../fiscal/modules";
 import { MODULES_FIN } from "../finance/modules";
 import { MODULES_SYC } from "../sycebnl/modules";
@@ -20,7 +20,8 @@ test("catalogue fiscal aligné sur les modules de l'application", () => {
 });
 
 test("éléments des parcours", () => {
-  expect(elementsParcours("SYS-N1", mods).map(e => e.cle)).toEqual(["m1", "m2", "CPT-T", "SYS1-FINAL"]);
+  // SYS-N1 : les 12 modules du code (les modules des formateurs, Firestore, n'en font plus partie), puis « Quel compte ? »
+  expect(elementsParcours("SYS-N1", mods).map(e => e.cle)).toEqual([...SYS1.map(([f]) => `SY-${f}`), "CPT-T", "SYS1-FINAL"]);
   expect(elementsParcours("FISC", mods)).toHaveLength(16);
   expect(elementsParcours("FIN", mods).map(e => e.cle)).toEqual(["FIN-FE1", "FIN-FE2", "FIN-FE3", "FIN-FE4", "FIN-FE5", "FIN-FE6", "FIN-FE7", "FIN-FINAL"]);
   expect(elementsParcours("SYS-N2", mods).map(e => e.cle)).toEqual(["JRN-ZAO", "CPT-1", "CPT-2", "CPT-3", "CPT-4", "CPT-5", "CPT-6", "CPT-7", "CPT-8", "CPT-9", "SYS2-FINAL"]);
@@ -34,19 +35,20 @@ test("éléments des parcours", () => {
   }
 });
 
+const notesN1 = (p, autres = {}) => ({ ...Object.fromEntries(SYS1.map(([f]) => [`SY-${f}`, { pct: p }])), ...autres });
+
 test("suivi sans réussite : un QCM sous 70 %", () => {
-  const r = evaluer("SYS-N1", mods, { scores: { m1: { pct: 60 }, "CPT-T": { pct: 100 }, "SYS1-FINAL": { pct: 80 } }, progress: { m1: "done", m2: "done" } });
+  const r = evaluer("SYS-N1", mods, { scores: notesN1(85, { "SY-S1": { pct: 60 }, "CPT-T": { pct: 100 }, "SYS1-FINAL": { pct: 80 } }) });
   expect(r.suivi).toBe(true);
   expect(r.reussite).toBe(false);
-  expect(r.moyenne).toBe(80);
-  expect(r.aAmeliorer).toEqual(["Fondements SYSCOHADA"]);
+  expect(r.aAmeliorer).toEqual(["S1 · Le cadre OHADA et les principes comptables"]);
 });
 
 test("réussite : chaque élément ≥ 70 % et moyenne ≥ 80 %, avec mention", () => {
-  // (75 + 90 + 2 × 84) / 4 = 83
-  const ok = evaluer("SYS-N1", mods, { scores: { m1: { pct: 75 }, "CPT-T": { pct: 90 }, "SYS1-FINAL": { pct: 84 } }, progress: { m2: "done" } });
-  expect(ok).toMatchObject({ suivi: true, reussite: true, moyenne: 83, mention: "Bien", heures: 7 });
-  const moyTropBasse = evaluer("SYS-N1", mods, { scores: { m1: { pct: 72 }, "CPT-T": { pct: 74 }, "SYS1-FINAL": { pct: 75 } }, progress: { m2: "done" } });
+  // (12 × 85 + 90 + 2 × 84) / 15 = 85,2
+  const ok = evaluer("SYS-N1", mods, { scores: notesN1(85, { "CPT-T": { pct: 90 }, "SYS1-FINAL": { pct: 84 } }) });
+  expect(ok).toMatchObject({ suivi: true, reussite: true, moyenne: 85, mention: "Bien", heures: 21 });
+  const moyTropBasse = evaluer("SYS-N1", mods, { scores: notesN1(72, { "CPT-T": { pct: 74 }, "SYS1-FINAL": { pct: 75 } }) });
   expect(moyTropBasse.reussite).toBe(false);
   expect([mention(80), mention(90), mention(97), mention(79)]).toEqual(["Bien", "Très bien", "Excellent", null]);
 });
@@ -108,10 +110,10 @@ test("ouverture progressive : acquis conservés et examen final", () => {
   const tous = p => Object.fromEntries(FISC.map(([f]) => [`FISC-${f}`, { pct: p }]));
   expect(etatParcours("FISC", [], { scores: tous(79) })).toMatchObject({ tousReussis: true, finalOuvert: false, moyenne: 79 });
   expect(etatParcours("FISC", [], { scores: tous(80) })).toMatchObject({ tousReussis: true, finalOuvert: true, nReussis: 15 });
-  // SYS-N1 : module sans évaluation réussi quand il est terminé ; SYS-N2 : pas d'ordre imposé
-  const n1 = etatParcours("SYS-N1", mods, { scores: { m1: { pct: 70 } }, progress: {} });
-  expect(n1.elements.map(x => [x.cle, x.ouvert])).toEqual([["m1", true], ["m2", true], ["CPT-T", false]]);
-  const n1b = etatParcours("SYS-N1", mods, { scores: { m1: { pct: 70 } }, progress: { m2: "done" } });
-  expect(n1b.elements[2].ouvert).toBe(true);
+  // SYS-N1 : S1 réussi ouvre S2 ; « Quel compte ? » s'ouvre après S12, ou dès qu'il a été commencé ; SYS-N2 : pas d'ordre imposé
+  const n1 = etatParcours("SYS-N1", mods, { scores: { "SY-S1": { pct: 70 } } });
+  expect(n1.elements.slice(0, 3).map(x => [x.cle, x.ouvert])).toEqual([["SY-S1", true], ["SY-S2", true], ["SY-S3", false]]);
+  expect(n1.elements[12]).toMatchObject({ cle: "CPT-T", ouvert: false });
+  expect(etatParcours("SYS-N1", [], { scores: { "CPT-T": { pct: 40 } } }).elements[12].ouvert).toBe(true);
   expect(etatParcours("SYS-N2", [], {}).elements.every(x => x.ouvert)).toBe(true);
 });
