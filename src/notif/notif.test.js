@@ -22,11 +22,17 @@ test("rappel local d'abonnement à 7 jours ou moins de l'expiration", () => {
   expect(depuis(Date.now() - 30 * 1000)).toBe("à l'instant");
 });
 
-test("recommandations : accès, QCM à refaire, module suivant, Code des impôts", () => {
-  const mods = [{ id: "m1", titre: "Fondements", ordre: 1 }, { id: "m2", titre: "Bilan", ordre: 2 }, { id: "m3", titre: "TFT", ordre: 3 }];
-  const sansAcces = recommandations({ mods, pr: {}, sc: {}, ok: false });
+test("recommandations : accès, QCM à refaire, module suivant du SYSCOHADA Niveau 1, Code des impôts", () => {
+  const sansAcces = recommandations({ pr: {}, sc: {}, ok: false });
   expect(sansAcces[0].k).toBe("acces");
-  const R = recommandations({ mods, pr: { m1: "done", m2: "done" }, sc: { m1: { pct: 80 }, m2: { pct: 40 } }, ok: true });
-  expect(R.map(r => r.k)).toEqual(["refaire", "suivant", "fisc"]);
-  expect(R[0].mod.id).toBe("m2"); expect(R[1].mod.id).toBe("m3");
+  expect(sansAcces[1]).toMatchObject({ k: "suivant", act: "n1" }); // S1 est gratuit
+  expect(sansAcces[1].mod.id).toBe("S1");
+  // S1 réussi, S2 à 40 % : S2 à refaire ; aucun nouveau module ouvert (S3 fermé) ; puis le Code des impôts
+  const R = recommandations({ pr: {}, sc: { "SY-S1": { pct: 80 }, "SY-S2": { pct: 40 } }, ok: true });
+  expect(R.map(r => r.k)).toEqual(["refaire", "fisc", "ef"]);
+  expect(R[0].mod.id).toBe("S2");
+  // S1 et S2 réussis : continuer avec S3
+  const R2 = recommandations({ pr: {}, sc: { "SY-S1": { pct: 80 }, "SY-S2": { pct: 75 } }, ok: true });
+  expect(R2[0]).toMatchObject({ k: "suivant", act: "n1" });
+  expect(R2[0].mod.id).toBe("S3");
 });
