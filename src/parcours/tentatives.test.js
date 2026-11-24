@@ -69,14 +69,14 @@ describe("Examen final : tentatives et délais", () => {
   });
 });
 
-// Liste « Il vous reste » de la carte d'examen final (SYSCOHADA Niveau 1 : module réussi, exercice « Quel compte ? » à faire)
+// Liste « Il vous reste » de la carte d'examen final (SYSCOHADA Niveau 1 : modules réussis, exercice « Quel compte ? » à faire)
 test("éléments restant à réussir avant l'examen final", () => {
   const { resteAFaire } = require("./ExamenFinal");
-  const { etatParcours } = require("../attest/regles");
-  const mods = [{ id: "m1", titre: "Fondements SYSCOHADA" }];
-  const e = etatParcours("SYS-N1", mods, { scores: { m1: { pct: 100 } } });
+  const { etatParcours, SYS1 } = require("../attest/regles");
+  const modules = p => Object.fromEntries(SYS1.map(([f]) => [`SY-${f}`, { pct: p }]));
+  const e = etatParcours("SYS-N1", [], { scores: modules(100) });
   expect(resteAFaire(e).map(x => [x.cle, x.ouvert, x.pct])).toEqual([["CPT-T", true, null]]);
-  const e2 = etatParcours("SYS-N1", mods, { scores: { m1: { pct: 100 }, "CPT-T": { pct: 55 } } });
+  const e2 = etatParcours("SYS-N1", [], { scores: { ...modules(100), "CPT-T": { pct: 55 } } });
   expect(resteAFaire(e2).map(x => x.pct)).toEqual([55]);
-  expect(resteAFaire(etatParcours("SYS-N1", mods, { scores: { m1: { pct: 100 }, "CPT-T": { pct: 80 } } }))).toEqual([]);
+  expect(resteAFaire(etatParcours("SYS-N1", [], { scores: { ...modules(100), "CPT-T": { pct: 80 } } }))).toEqual([]);
 });

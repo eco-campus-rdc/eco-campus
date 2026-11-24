@@ -171,6 +171,11 @@ export function texteModuleEthique(mod) {
   return segments([point(`Éthique, module ${String(mod.id).replace(/^ET/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);
 }
 
+// ── Module SYSCOHADA niveau 1 (src/syscohada/modules.js) : narration écrite pour l'oral
+export function texteModuleSys1(mod) {
+  return segments([point(`SYSCOHADA, module ${String(mod.id).replace(/^S/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);
+}
+
 // ── Module du Code minier (src/mines/modules.js) : narration écrite pour l'oral
 export function texteModuleMines(mod) {
   return segments([point(`Code minier, module ${String(mod.id).replace(/^MI/, "")}. ${mod.titre}`), ...(mod.narration || []).map(point)]);

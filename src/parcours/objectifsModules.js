@@ -361,6 +361,68 @@ export const OBJECTIFS_MODULES = {
     "Raisonner sur le consentement éclairé, le travail des enfants et les générations futures.",
   ],
 
+  // ── SYSCOHADA révisé · Niveau 1 ──
+  S1: [
+    "Situer l'OHADA, l'AUDCIF de 2017 et les deux systèmes comptables (normal et minimal de trésorerie).",
+    "Appliquer les principes comptables et repérer leur violation.",
+    "Lister les obligations d'une entreprise : livres, pièces, inventaire, états financiers, dépôt et conservation.",
+  ],
+  S2: [
+    "Décider du côté débit ou crédit d'une opération avec la règle emploi-ressource.",
+    "Passer une écriture équilibrée au journal, TVA comprise.",
+    "Reporter au grand livre, établir la balance et rechercher une erreur.",
+  ],
+  S3: [
+    "Situer un compte dans les neuf classes et lire son numéro.",
+    "Classer les postes à l'actif ou au passif d'un bilan.",
+    "Présenter un bilan équilibré sans compenser avoirs et découverts.",
+  ],
+  S4: [
+    "Distinguer les activités ordinaires et les opérations HAO.",
+    "Calculer la marge commerciale, la valeur ajoutée, l'EBE et les résultats successifs.",
+    "Constater l'impôt sur le résultat et en déduire le résultat net.",
+  ],
+  S5: [
+    "Calculer le net commercial, le net financier et la TVA d'une facture.",
+    "Enregistrer une facture et un avoir chez l'acheteur et chez le vendeur.",
+    "Traiter l'escompte, les frais accessoires et les avances.",
+  ],
+  S6: [
+    "Utiliser les comptes de TVA facturée, récupérable, due et de crédit.",
+    "Liquider la TVA du mois et passer son paiement avant le 15 du mois suivant.",
+    "Reconnaître une facture qui ne permet pas de déduire la TVA.",
+  ],
+  S7: [
+    "Enregistrer les règlements par banque, caisse et virement de fonds.",
+    "Comptabiliser une lettre de change ou un billet à ordre chez les deux parties.",
+    "Calculer et comptabiliser l'escompte d'un effet jusqu'à l'échéance.",
+  ],
+  S8: [
+    "Passer les écritures de stock initial et de stock final en inventaire intermittent.",
+    "Calculer le coût d'achat des marchandises vendues.",
+    "Valoriser les sorties au CUMP et en PEPS, et déprécier un stock.",
+  ],
+  S9: [
+    "Passer du salaire brut au net à payer (CNSS, IPR).",
+    "Calculer les charges patronales (CNSS, INPP, ONEM) et le coût employeur.",
+    "Enregistrer la paie, une avance sur salaire et le paiement du net.",
+  ],
+  S10: [
+    "Déterminer le coût d'entrée d'une immobilisation.",
+    "Établir un plan d'amortissement linéaire au prorata temporis.",
+    "Comptabiliser la cession d'une immobilisation et sa plus ou moins-value.",
+  ],
+  S11: [
+    "Distinguer provision pour risques et dépréciation d'actif.",
+    "Traiter un client douteux, puis sa perte définitive.",
+    "Constituer et reprendre une provision pour litige.",
+  ],
+  S12: [
+    "Passer les charges et produits constatés d'avance, à payer et à recevoir.",
+    "Enchaîner les travaux de clôture jusqu'aux états financiers.",
+    "Affecter le bénéfice : réserve légale, dividendes et report à nouveau.",
+  ],
+
   // ── Code minier ──
   MI1: [
     "Expliquer pourquoi le sous-sol appartient à l'État et ce que cela implique pour le propriétaire du sol.",

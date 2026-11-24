@@ -80,6 +80,16 @@ const MIN = [
   ["MI5", "Communautés, environnement et droits humains"], ["MI6", "Transparence, contrôle et contenu local"],
 ];
 const cleMin = id => `MI-${id}`;
+// SYSCOHADA révisé, niveau 1 : 12 modules (aligné sur src/syscohada/modules — vérifié par les tests)
+const SYS1 = [
+  ["S1", "Le cadre OHADA et les principes comptables"], ["S2", "La partie double : journal, grand livre et balance"],
+  ["S3", "Le plan de comptes et le bilan"], ["S4", "Le compte de résultat et les soldes intermédiaires de gestion"],
+  ["S5", "Achats, ventes, réductions et factures d'avoir"], ["S6", "La TVA : comptes et liquidation mensuelle"],
+  ["S7", "Règlements et effets de commerce"], ["S8", "Les stocks : inventaire et valorisation"],
+  ["S9", "La paie : salaires, CNSS et IPR"], ["S10", "Immobilisations, amortissements et cessions"],
+  ["S11", "Provisions et dépréciations"], ["S12", "Clôture : régularisations, états financiers et affectation du résultat"],
+];
+const cleSys1 = id => `SY-${id}`;
 const CLE_FINAL_SYC = "SYC-FINAL";
 const COEF_FINAL_SYC = 2; // = COEF_FINAL
 const cleSyc = id => `SYC-${id}`;
@@ -102,7 +112,7 @@ const EXAMENS = {
 
 const PARCOURS = [
   { id: "SYS-N1", titre: "Comptabilité SYSCOHADA révisé — Niveau 1 : fondamentaux", court: "SYSCOHADA · Niveau 1", certificat: true,
-    description: "Modules de cours de comptabilité générale, exercice « Quel compte ? » sur l'ensemble du plan et examen final de 30 questions, coefficient 2." },
+    description: "Les 12 modules de comptabilité générale (cadre OHADA et principes, partie double, bilan, compte de résultat, achats et ventes, TVA, règlements et effets, stocks, paie, immobilisations, provisions et dépréciations, clôture et affectation du résultat), l'exercice « Quel compte ? » sur l'ensemble du plan et l'examen final de 30 questions, coefficient 2." },
   { id: "FISC", titre: "Fiscalité congolaise — Le Code des impôts", court: "Fiscalité RDC", certificat: true,
     description: "Les 15 modules de la fiscalité congolaise, à jour de la réforme de 2026 : IS et IRPP, TVA, obligations et contrôle, contentieux, import-export, paie, facture normalisée, ainsi que l'IBP, l'IPR, l'IM et l'IRL des exercices antérieurs, et l'examen final de 40 questions, coefficient 2." },
   { id: "SYS-N2", titre: "Comptabilité SYSCOHADA révisé — Niveau 2 : pratique", court: "SYSCOHADA · Niveau 2", certificat: true,
@@ -128,8 +138,10 @@ const modulesActifs = modules => (modules || []).filter(m => m && m.on !== false
 
 // Éléments d'un parcours hors examen final : { cle, titre, heures, evalue } (cle = clé de users.scores / users.progress)
 function elementsBase(id, modules) {
+  // 12 modules d'1 h 30 (leçon, écritures, audio, QCM), puis l'exercice « Quel compte ? » toutes classes.
+  // Les modules publiés par les formateurs (Firestore) ne font plus partie du parcours certifiant.
   if (id === "SYS-N1") return [
-    ...modulesActifs(modules).map(m => ({ cle: m.id, titre: m.titre, heures: 2, evalue: m.evalType !== "none" })),
+    ...SYS1.map(([f, t]) => ({ cle: cleSys1(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true })),
     { cle: "CPT-T", titre: "Exercice « Quel compte ? » — toutes classes", heures: 2, evalue: true },
   ];
   if (id === "FISC") return FISC.map(([f, t]) => ({ cle: `FISC-${f}`, titre: `${f} · ${t}`, heures: 1, evalue: true }));
@@ -221,4 +233,4 @@ function numeroAttestation(alea = Math.random, annee = new Date().getFullYear())
 }
 const numeroValide = n => /^EC-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/.test(String(n || ""));
 
-module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
+module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, SYS1, cleSys1, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };

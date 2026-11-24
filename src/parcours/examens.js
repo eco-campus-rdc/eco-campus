@@ -16,6 +16,7 @@ import { MODULES_EDUF } from "../eduf/modules";
 import { MODULES_DT } from "../travail/modules";
 import { MODULES_ETH } from "../ethique/modules";
 import { MODULES_MINES } from "../mines/modules";
+import { MODULES_SYS1 } from "../syscohada/modules";
 import { enonce } from "../ef/syscohada/exercice";
 
 const avecModule = mods => mods.flatMap(m => m.qcm.map(q => ({ ...q, m: m.id })));
@@ -100,9 +101,12 @@ export const chargerBanqueSys2 = () => sys2P || (sys2P = Promise.all([import("..
     const minus = s => (s === s.toUpperCase() ? s.charAt(0) + s.slice(1).toLowerCase() : s);
     return construireBanqueSys2(c.default || c, n => minus(t(n))); }));
 
+// SYS-N1 : QCM des 12 modules et banque dédiée aux fondamentaux (sans doublon d'énoncé)
+export const banqueSys1 = () => { const vus = new Set(); return [...avecModule(MODULES_SYS1), ...BANQUE_SYS1].filter(q => !vus.has(q.q) && vus.add(q.q)); };
+
 // Examen d'un parcours : { titre, col, charger() → banque (tableau ou promesse) }
 export const EXAMENS_FINAUX = {
-  "SYS-N1": { titre: "Examen final SYSCOHADA — Niveau 1 : fondamentaux", col: "#0A2A5C", charger: () => BANQUE_SYS1 },
+  "SYS-N1": { titre: "Examen final SYSCOHADA — Niveau 1 : fondamentaux", col: "#0A2A5C", charger: () => banqueSys1() },
   FISC: { titre: "Examen final — Fiscalité congolaise", col: "#A3122A", charger: () => avecModule(MODULES_FISC) },
   "SYS-N2": { titre: "Examen final SYSCOHADA — Niveau 2 : passer les écritures", col: "#1D4ED8", charger: chargerBanqueSys2 },
   FIN: { titre: "Examen final — Finance d'entreprise", col: "#B7791F", charger: () => avecModule(MODULES_FIN) },

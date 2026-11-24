@@ -16,8 +16,8 @@ export function catalogue(){
   return FORMATIONS.map(f=>{
     const p=PARCOURS.find(x=>x.id===f.id),x=EXAMENS[f.id];
     const n=elementsParcours(f.id,[]).filter(e=>!e.final).length;
-    // SYS-N1 : ses modules de cours sont publiés en ligne (non comptés ici) ; SYS-N2 : exercices pratiques
-    const contenu=f.id==="SYS-N1"?"Modules de cours":f.id==="SYS-N2"?`${n} exercices pratiques`:`${n} modules`;
+    // SYS-N1 : 12 modules et l'exercice « Quel compte ? » ; SYS-N2 : exercices pratiques
+    const contenu=f.id==="SYS-N1"?`${n-1} modules + exercice`:f.id==="SYS-N2"?`${n} exercices pratiques`:`${n} modules`;
     return{...f,court:p.court,titre:p.titre,contenu,nbQ:x.nbQ,n,objectifs:OBJECTIFS[f.id].competences};
   });
 }

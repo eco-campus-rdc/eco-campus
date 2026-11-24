@@ -15,6 +15,8 @@ import{MODULES_ETH}from"./ethique/modules";
 import Ethique from"./ethique/Ethique";
 import{MODULES_MINES}from"./mines/modules";
 import Mines from"./mines/Mines";
+import{MODULES_SYS1}from"./syscohada/modules";
+import SyscohadaN1 from"./syscohada/SyscohadaN1";
 import ParcsRdc from"./parcs/ParcsRdc";
 import OuParcs from"./parcs/OuParcs";
 import{NIVEAUX_PARCS}from"./parcs/sites";
@@ -284,7 +286,7 @@ function useUsers(){
 // activite/{uid} : dernière activité de chaque compte (signal toutes les 90 s quand l'onglet est visible)
 // connexions/{id} : une ligne par ouverture de session (une fois par onglet)
 const ENLIGNE_MS=4*60*1000;
-const VUE_LBL={home:"Accueil",form:"Mes formations",msg:"Messages",pres:"Présentations",jrn:"Monographie ZAO",cpt:"Guide des comptes",audio:"Écouter les cours",fisc:"Code des impôts",fin:"Finance d'entreprise",syc:"SYCEBNL",banq:"Comptabilité bancaire",eduf:"Éducation financière",dtrav:"Droit du travail",ethique:"Éthique",mines:"Code minier",filleuls:"Mes filleuls",tdb:"Tableau de bord",parcs:"Parcs et sites de la RDC",sugg:"Suggestions",apropos:"À propos",stages:"Stages",videos:"Vidéos",ef:"États financiers",psycho:"Tests psychotechniques",services:"Services",prog:"Progrès",res:"Résultats",mods:"Mes modules",vids:"Mes vidéos",docs:"Documents",corr:"Corrections",fmsg:"Messages",stats:"Statistiques",admin:"Administration",param:"Paramètres"};
+const VUE_LBL={home:"Accueil",form:"Mes formations",msg:"Messages",pres:"Présentations",jrn:"Monographie ZAO",cpt:"Guide des comptes",audio:"Écouter les cours",fisc:"Code des impôts",fin:"Finance d'entreprise",syc:"SYCEBNL",banq:"Comptabilité bancaire",eduf:"Éducation financière",dtrav:"Droit du travail",ethique:"Éthique",mines:"Code minier",sysn1:"SYSCOHADA N1",filleuls:"Mes filleuls",tdb:"Tableau de bord",parcs:"Parcs et sites de la RDC",sugg:"Suggestions",apropos:"À propos",stages:"Stages",videos:"Vidéos",ef:"États financiers",psycho:"Tests psychotechniques",services:"Services",prog:"Progrès",res:"Résultats",mods:"Mes modules",vids:"Mes vidéos",docs:"Documents",corr:"Corrections",fmsg:"Messages",stats:"Statistiques",admin:"Administration",param:"Paramètres"};
 const appareil=()=>{const ua=navigator.userAgent||"";const os=/Android/i.test(ua)?"Android":/iPhone|iPad|iPod/i.test(ua)?"iOS":/Windows/i.test(ua)?"Windows":/Mac OS/i.test(ua)?"Mac":/Linux/i.test(ua)?"Linux":"Autre";
   const nav=/Edg\//.test(ua)?"Edge":/OPR\//.test(ua)?"Opera":/SamsungBrowser/.test(ua)?"Samsung":/Chrome\//.test(ua)?"Chrome":/Firefox\//.test(ua)?"Firefox":/Safari\//.test(ua)?"Safari":"Navigateur";
   const app=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||String(document.referrer).startsWith("android-app://")?"Application":"Site web";
@@ -1638,6 +1640,7 @@ function FA({uid,onOut}){
     {k:"dtrav",ico:"scale",label:"Droit du travail"},
     {k:"ethique",ico:"compass",label:"Éthique"},
     {k:"mines",ico:"pick",label:"Code minier"},
+    {k:"sysn1",ico:"book-2",label:"SYSCOHADA N1"},
     {k:"parcs",ico:"trees",label:"Parcs de la RDC"},
     {k:"sugg",ico:"bulb",label:"Suggestions"},
     {k:"apropos",ico:"info-circle",label:"À propos"},
@@ -1735,6 +1738,7 @@ function FA({uid,onOut}){
   if(vue==="dtrav")return W(<Travail K={K} mob={mob} apercu/>);
   if(vue==="ethique")return W(<Ethique K={K} mob={mob} apercu/>);
   if(vue==="mines")return W(<Mines K={K} mob={mob} apercu/>);
+  if(vue==="sysn1")return W(<SyscohadaN1 K={K} mob={mob} apercu/>);
   if(vue==="parcs")return W(<ParcsRdc K={K} mob={mob} apercu/>);
   if(vue==="sugg")return W(<Suggestions K={K} mob={mob} db={db} me={{uid,nom:fData.nom,mail:fData.mail,role:"formateur"}}/>);
   if(vue==="apropos")return W(<Apropos K={K} mob={mob} onGo={sV}/>);
@@ -2853,7 +2857,7 @@ function UA({uid,onOut}){
   const aMods=mods.filter(m=>m.on!==false);
   const pr=uData.progress||{},sc=uData.scores||{};
   // Parcours SYSCOHADA : modules ouverts dans l'ordre (acquis conservés), examens finaux N1 (Modules de cours) et N2 (ZAO, Guide des comptes)
-  const etatN1=etatParcours("SYS-N1",aMods,{scores:sc,progress:pr}),etatN2=etatParcours("SYS-N2",[],{scores:sc,progress:pr});
+  const etatN1=etatParcours("SYS-N1",[],{scores:sc,progress:pr}),etatN2=etatParcours("SYS-N2",[],{scores:sc,progress:pr});
   // Élément d'un parcours SYSCOHADA à réussir : exercice « Quel compte ? » (ouvert directement), monographie ou module
   const allerElement=cle=>{
     if(/^CPT-/.test(cle)){sExoCpt(cle==="CPT-T"?0:+cle.slice(4));sV("cpt");}
@@ -2886,7 +2890,8 @@ function UA({uid,onOut}){
     }{vue==="stages"&&<StagePage stages={allStages} plats={allPlats} ok={ok}/>
     }{vue==="services"&&<ServicesPage user={uData}/>}
     {vue==="form"&&<MesFormations K={K} mob={mob} user={uData} mods={aMods} ok={ok} onGo={sV} onExam={sExam} onSub={()=>sSub(true)}/>}
-    {vue==="mods"&&<ModulesCours mods={aMods} pr={pr} sc={sc} ok={ok} vids={vids} onOpen={ouvrirModule} uid={uid} onSub={()=>sSub(true)} etat={etatN1} onExam={()=>sExam("SYS-N1")} onGo={sV} onElement={allerElement}/>}
+    {vue==="mods"&&<SyscohadaN1 K={K} mob={mob} db={db} uid={uid} scores={sc} progress={pr} ok={ok} onSub={()=>sSub(true)} onGo={sV} onExo={k=>{sExoCpt(k);sV("cpt");window.scrollTo({top:0});}}
+      apres={aMods.length>0&&<div style={{marginTop:18}}><ModulesCours mods={aMods} pr={pr} sc={sc} ok={ok} vids={vids} onOpen={ouvrirModule} uid={uid} onSub={()=>sSub(true)} complement/></div>}/>}
     {vue==="res"&&<MesResultats pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} abonne={abonne} mods={aMods} u={uData} uid={uid} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="psycho"&&<PsychoPage uid={uid} u={uData}/>}
     {vue==="param"&&<ParametresPage role="apprenant" uid={uid} data={uData} onOut={onOut} onGo={sV}/>}
@@ -3847,7 +3852,7 @@ function SousNav({groupes,vue,onGo,badges={},c1,c2}){
 }
 
 // ── MODULES DE COURS (rubrique Apprendre) : catalogue, recherche et filtre par matière ──
-function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo,onElement}){
+function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo,onElement,complement}){
   const K=useK();
   const[pdfMod,setPdfMod]=useState(null),[fi,sF]=useState("Toutes"),[modQ,sModQ]=useState("");
   const mats=[...new Set(mods.map(m=>m.mat||"Général"))];
@@ -3857,10 +3862,10 @@ function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo,onEl
     {/* Modules */}
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:7}}>
-        <div className="h-sec" style={{color:K.t1}}>SYSCOHADA · Niveau 1 : modules de cours <span style={{color:K.t3,fontWeight:500,fontSize:15,fontFamily:"'Outfit',sans-serif"}}>({fil.length})</span></div>
+        <div className="h-sec" style={{color:K.t1}}>{complement?"Modules complémentaires des formateurs":"SYSCOHADA · Niveau 1 : modules de cours"} <span style={{color:K.t3,fontWeight:500,fontSize:15,fontFamily:"'Outfit',sans-serif"}}>({fil.length})</span></div>
         {!ok&&<Tg c={K.wa} bg={K.waBg} bd={K.waBd} ch="🔒 Abonnement requis"/>}
       </div>
-      <Objectifs K={K} id="SYS-N1"/>
+      {complement?<div style={{fontSize:13,color:K.t3,lineHeight:1.55,marginBottom:11}}>Ressources publiées par les formateurs, en complément du parcours. Elles ne comptent pas pour le certificat.</div>:<Objectifs K={K} id="SYS-N1"/>}
       <div style={{position:"relative",marginBottom:11}}>
         <i className="ti ti-search" style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:14,color:K.t3}}/>
         <input value={modQ} onChange={e=>sModQ(e.target.value)} placeholder="Rechercher un module…"
@@ -3922,7 +3927,8 @@ function MesResultats({pr,sc,gp,nd,ok,abonne,mods,u,uid,onSub,onGo}){
   const[onglet,sOnglet]=useState("cours");
   const aller=v=>onGo&&onGo(v);
   const L={
-    cours:[...mods.map(m=>({cle:m.id,titre:m.titre,sous:m.mat||"",s:sc[m.id],fait:pr[m.id]==="done",ico:m.ico,col:m.col,go:"mods"})),
+    cours:[...MODULES_SYS1.map(m=>({cle:`SY-${m.id}`,titre:`${m.id} · ${m.titre}`,sous:"SYSCOHADA · Niveau 1",s:sc[`SY-${m.id}`],col:m.col,go:"mods"})),
+      ...mods.map(m=>({cle:m.id,titre:m.titre,sous:`Module complémentaire${m.mat?` · ${m.mat}`:""}`,s:sc[m.id],fait:pr[m.id]==="done",ico:m.ico,col:m.col,go:"mods"})),
       {cle:"SYS1-FINAL",titre:"Examen final SYSCOHADA Niveau 1 (30 questions, coefficient 2)",sous:"SYSCOHADA · certificat",s:sc["SYS1-FINAL"],go:"mods"}],
     fisc:[...MODULES_FISC.map(m=>({cle:`FISC-${m.id}`,titre:`${m.id} · ${m.titre}`,sous:"Fiscalité RDC",s:sc[`FISC-${m.id}`],col:m.col,go:"fisc"})),
       {cle:"FISC-FINAL",titre:"Examen final Fiscalité (40 questions, coefficient 2)",sous:"Fiscalité RDC · certificat",s:sc["FISC-FINAL"],go:"fisc"}],
@@ -4822,6 +4828,7 @@ function AA({onOut}){
           {k:"dtrav",ico:"scale",       label:"Droit du travail",col:"#7C3AED"},
           {k:"ethique",ico:"compass",   label:"Éthique",col:"#B91C1C"},
           {k:"mines",ico:"pick",        label:"Code minier",col:"#92400E"},
+          {k:"sysn1",ico:"book-2",      label:"SYSCOHADA N1",col:"#0A2A5C"},
           {k:"parcs",ico:"trees",       label:"Parcs de la RDC",col:"#15803D"},
           {k:"ac",ico:"ticket",         label:"Tarifs et codes offerts",col:"#0D7A6B"},
           {k:"att",ico:"certificate",   label:"Attestations",   col:"#B7791F"},
@@ -5504,6 +5511,7 @@ function AA({onOut}){
     {tab==="dtrav"&&<Travail K={K} mob={mob} apercu/>}
     {tab==="ethique"&&<Ethique K={K} mob={mob} apercu/>}
     {tab==="mines"&&<Mines K={K} mob={mob} apercu/>}
+    {tab==="sysn1"&&<SyscohadaN1 K={K} mob={mob} apercu/>}
     {tab==="parcs"&&<ParcsRdc K={K} mob={mob} apercu/>}
     {tab==="obs"&&<Observateurs K={K} mob={mob} db={db} users={users}/>}
     {tab==="essai"&&<AdminEssai K={K} mob={mob} db={db} users={users}/>}
