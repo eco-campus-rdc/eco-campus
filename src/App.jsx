@@ -1,6 +1,6 @@
 import React,{useState,useRef,useEffect,useCallback,useMemo,createContext,useContext}from"react";
 import{initializeApp,deleteApp}from"firebase/app";
-import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,updatePassword,reauthenticateWithCredential,EmailAuthProvider}from"firebase/auth";
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,sendPasswordResetEmail,updatePassword,reauthenticateWithCredential,EmailAuthProvider}from"firebase/auth";
 import{getFirestore,doc,getDoc,setDoc,updateDoc,addDoc,collection,getDocs,onSnapshot,deleteDoc,serverTimestamp,query,where,orderBy,limit,deleteField,runTransaction,writeBatch}from"firebase/firestore";
 import{getStorage,ref,uploadBytes,getDownloadURL,deleteObject}from"firebase/storage";
 import EtatsFinanciers,{inscrireAnnuaire}from"./EtatsFinanciers";
@@ -2603,10 +2603,20 @@ function Auth({onL}){
   const[tab,sT]=useState("l"),[err,sE]=useState(""),[ok,sO]=useState(""),[busy,sB]=useState(false),[step,sS]=useState(1);
   const[consent,sConsent]=useState(false),[showPrivacy,sShowPrivacy]=useState(false),[needConsent,sNeedConsent]=useState(false);
   const[socialPret,sSocialPret]=useState(false);
+  const[existe,sExiste]=useState(""); // e-mail déjà inscrit : proposer la connexion ou la réinitialisation du mot de passe
   useEffect(()=>{let actif=true;preparerSocial().then(()=>{if(actif)sSocialPret(true);});return()=>{actif=false;};},[]);
   useEffect(()=>{try{if(sessionStorage.getItem(CLE_DECO)){sessionStorage.removeItem(CLE_DECO);sO("Vous avez été déconnecté après une période sans utilisation. Reconnectez-vous pour continuer.");}}catch(e){}},[]);
   const pm=useRef(null),rN=useRef(),rM=useRef(),rP=useRef(),rP2=useRef(),rC=useRef();
-  const sw=useCallback(t=>{sT(t);sS(1);sE("");sO("");sConsent(false);sNeedConsent(false);setTimeout(()=>[rN,rM,rP,rP2,rC].forEach(r=>{if(r.current)r.current.value="";}),0);},[]);
+  const sw=useCallback((t,mail="")=>{sT(t);sS(1);sE("");sO("");sExiste("");sConsent(false);sNeedConsent(false);setTimeout(()=>{[rN,rM,rP,rP2,rC].forEach(r=>{if(r.current)r.current.value="";});if(mail&&rM.current)rM.current.value=mail;},0);},[]);
+  // Mot de passe oublié : lien de réinitialisation envoyé par Firebase à l'adresse saisie
+  const reinit=useCallback(async(mail)=>{
+    const m=(mail||rM.current?.value||"").trim();sE("");sO("");
+    if(!m.includes("@"))return sE("Saisissez d'abord votre adresse e-mail, puis touchez « Mot de passe oublié ? ».");
+    sB(true);
+    try{await sendPasswordResetEmail(auth,m);sO(`Si un compte existe pour ${m}, un lien pour choisir un nouveau mot de passe vient d'être envoyé. Ouvrez l'e-mail (regardez aussi dans les spams), choisissez un mot de passe, puis connectez-vous ici.`);}
+    catch(e){sE(e.code==="auth/invalid-email"?"Adresse e-mail invalide.":e.code==="auth/too-many-requests"?"Trop de demandes : patientez quelques minutes puis réessayez.":e.code==="auth/network-request-failed"?"Pas de connexion internet : réessayez.":"Envoi impossible : "+e.message);}
+    sB(false);
+  },[]);
   const reg=useCallback(async()=>{
     const n=rN.current?.value?.trim()||"",m=rM.current?.value?.trim()||"",p=rP.current?.value||"",p2=rP2.current?.value||"";
     sE("");sO("");
@@ -2620,7 +2630,7 @@ function Auth({onL}){
       oublierParrain();
       sendNotifEmail({to_email:m,subject:"Bienvenue sur Éco-Campus RDC 🎉",nom:n,message:MSG_BIENVENUE});
       sO("Compte créé !");setTimeout(()=>sw("l"),1100);
-    }catch(e){sE(e.code==="auth/email-already-in-use"?"Email déjà utilisé.":e.message);}
+    }catch(e){if(e.code==="auth/email-already-in-use"){sExiste(m);}else sE(e.message);}
     sB(false);
   },[consent]);
   const login=useCallback(async()=>{
@@ -2628,8 +2638,15 @@ function Auth({onL}){
     try{
       const cred=await signInWithEmailAndPassword(auth,m,p);
       if(cred.user.email===ADM_EMAIL){onL("__admin__",cred.user);return;}
-      const snap=await getDoc(doc(db,"users",cred.user.uid));
-      if(!snap.exists()){sE("Profil introuvable.");sB(false);return;}
+      let snap=await getDoc(doc(db,"users",cred.user.uid));
+      if(!snap.exists()){
+        // Compte de connexion sans fiche (enregistrement interrompu à l'inscription) : on recrée la fiche, comme à l'inscription
+        try{
+          await saveUserData(cred.user.uid,{nom:cred.user.displayName||m.split("@")[0],mail:m,createdAt:new Date().toLocaleDateString("fr-FR"),abonnement:"aucun",activationCode:null,codeValide:false,demandeDate:null,dureeId:null,dateExpiration:null,progress:{},scores:{},consentDate:new Date().toISOString(),consentVersion:PRIVACY_VERSION});
+          snap=await getDoc(doc(db,"users",cred.user.uid));
+        }catch(x){}
+        if(!snap.exists()){sE("Votre compte existe mais sa fiche n'a pas pu être créée. Vérifiez votre connexion internet et réessayez, ou écrivez-nous.");sB(false);return;}
+      }
       const u=snap.data();
       updateDoc(doc(db,"users",cred.user.uid),{lastLogin:Date.now()}).catch(()=>{});
       if(u.role==="formateur"){onL("__formateur__:"+cred.user.uid,cred.user);return;}
@@ -2770,9 +2787,17 @@ function Auth({onL}){
                 {" "}d'Éco-Campus RDC.
               </span>
             </div>
-            {needConsent&&<div style={{marginTop:6,fontSize:12,color:K.wa,display:"flex",alignItems:"center",gap:5}}><i className="ti ti-alert-triangle" style={{fontSize:13}}/>Acceptez la politique avant de continuer avec Google ou Facebook.</div>}
+            {needConsent&&!consent&&<div style={{marginTop:6,fontSize:12,color:K.wa,display:"flex",alignItems:"center",gap:5}}><i className="ti ti-alert-triangle" style={{fontSize:13}}/>Acceptez la politique avant de continuer avec Google ou Facebook.</div>}
           </div>}
-          {step===1&&tab==="l"&&<div style={{textAlign:"right",marginTop:-5,marginBottom:11}}><button onClick={()=>{const m=rM.current?.value?.trim()||"";if(!m.includes("@"))return sE("Saisissez votre email d'abord");pm.current=m;sS(2);sE("");}} className="bt" style={{background:"none",border:"none",color:K.em,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontWeight:600}}>J'ai un code →</button></div>}
+          {step===1&&tab==="l"&&<div style={{display:"flex",justifyContent:"space-between",gap:8,marginTop:-5,marginBottom:11}}><button onClick={()=>reinit()} disabled={busy} className="bt" style={{background:"none",border:"none",color:K.t2,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontWeight:600,padding:0}}>Mot de passe oublié ?</button><button onClick={()=>{const m=rM.current?.value?.trim()||"";if(!m.includes("@"))return sE("Saisissez votre email d'abord");pm.current=m;sS(2);sE("");}} className="bt" style={{background:"none",border:"none",color:K.em,fontSize:13,cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontWeight:600}}>J'ai un code →</button></div>}
+          {existe&&tab==="r"&&<div style={{background:K.inBg,border:`1px solid ${K.inBd}`,borderRadius:10,padding:"11px 12px",marginBottom:11}}>
+            <div style={{fontSize:13.5,fontWeight:800,color:K.t1,marginBottom:4}}><i className="ti ti-user-check" style={{marginRight:5,color:K.in_}}/>Vous avez déjà un compte</div>
+            <div style={{fontSize:13,color:K.t2,lineHeight:1.5,marginBottom:9}}>Un compte existe déjà avec <b>{existe}</b>. Connectez-vous avec votre mot de passe. Si vous l'avez oublié, recevez un lien pour en choisir un nouveau. Si vous vous étiez inscrit avec Google, utilisez le bouton Google ci-dessous.</div>
+            <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+              <Btn ch="Me connecter" on={()=>sw("l",existe)} sx={{padding:"8px 13px",fontSize:13,minHeight:38}}/>
+              <Btn ch="Mot de passe oublié" v="g" on={()=>reinit(existe)} dis={busy} sx={{padding:"8px 13px",fontSize:13,minHeight:38}}/>
+            </div>
+          </div>}
           <Pop t="e" m={err}/><Pop t="o" m={ok}/>
           <Btn ch={busy?"…":step===2?"Valider →":tab==="l"?"Se connecter →":"Créer →"} on={go} full sx={{padding:"12px",fontSize:14,minHeight:46}} dis={busy}/>
           {step===2&&<button onClick={()=>{sS(1);sE("");}} className="bt" style={{width:"100%",marginTop:7,padding:"10px",background:"none",border:`1px solid ${K.b0}`,color:K.t3,borderRadius:8,fontFamily:"'Outfit',sans-serif",fontSize:13,cursor:"pointer",minHeight:40}}>← Retour</button>}
