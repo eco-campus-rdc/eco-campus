@@ -56,7 +56,7 @@ import{texteModuleCours,texteNarration,paragraphesNarration}from"./audio/lecture
 import EcouterCours from"./audio/EcouterCours";
 import{pctQcm,resumeCpt,fusionScore,CLES_CPT,moyenne}from"./ef/syscohada/scores";
 import MesAttestations from"./attest/MesAttestations";
-import{SEUIL_ELEMENT,EXAMENS,etatParcours}from"./attest/regles";
+import{SEUIL_ELEMENT,EXAMENS,PARCOURS,etatParcours}from"./attest/regles";
 import{CarteExamenFinal,ExamenFinal}from"./parcours/ExamenFinal";
 import MesFormations from"./parcours/MesFormations";
 import Objectifs,{ObjectifsModule}from"./parcours/Objectifs";
@@ -2866,7 +2866,8 @@ function UA({uid,onOut}){
     window.scrollTo({top:0,behavior:"smooth"});
   };
   const ouvrirModule=m=>{const e=etatN1.elements.find(x=>x.cle===m.id);if(ok&&e&&!e.ouvert){sV("mods");return;}sM(m);};
-  const nd=aMods.filter(m=>pr[m.id]==="done").length,gp=aMods.length?Math.round(nd/aMods.length*100):0;
+  // Progression affichée à l'accueil et dans les résultats : les 12 modules du parcours SYSCOHADA Niveau 1
+  const nTotN1=MODULES_SYS1.length,nd=etatN1.elements.filter(e=>e.cle.startsWith("SY-")&&e.reussi).length,gp=Math.round(nd/nTotN1*100);
   const save=async(modId,s,t)=>{try{await saveProgress(uid,modId,{s,t,pct:Math.round(s/t*100)});}catch(e){alert("Score non enregistré (connexion ?). Repassez l'évaluation une fois en ligne.");}};
   const markDoneNoEval=async modId=>{await updateDoc(doc(db,"users",uid),{[`progress.${modId}`]:"done"});sM(null);sV("res");};
   const W=(ch,hideNav)=><div style={{minHeight:"100vh",background:K.bg,fontFamily:"'Outfit',sans-serif"}}><style>{mCss(K)}</style>{!hideNav&&<Nav u={uData} vue={vue} sV={v=>{sV(v);sM(null);sExam(null);}} ok={abonne} essai={!abonne&&essai.enCours?essai.joursRestants:null} onSub={()=>sSub(true)} onOut={onOut} live={live.on} uid={uid}/>}<main className="mp" style={{maxWidth:1060,margin:"0 auto",padding:hideNav?"14px":undefined,paddingBottom:hideNav?20:(mob?80:20)}}>{ch}</main>{sub&&<SubM onClose={()=>sSub(false)} uid={uid} u={uData}/>}{showOnboarding&&<Onboarding u={uData} onDone={doneOnboarding} mods={aMods}/>}{!showOnboarding&&<FinEssai K={K} uid={uid} essai={essai} abonne={abonne} reussites={reussites} pret={cfgEssai.charge} onSub={()=>sSub(true)}/>}<AutoLogoutBanner warning={uaWarn} mob={mob}/></div>;
@@ -2884,7 +2885,7 @@ function UA({uid,onOut}){
     {vue==="tdb"&&(estObs?<TableauLecture K={K} mob={mob}/>:<div style={{textAlign:"center",color:K.t3,padding:30}}>Votre compte n'a pas accès au tableau de bord.</div>)}
     {vue==="home"&&<CarteParrainage K={K} mob={mob} uid={uid} gagnes={uData.parrainageGagnes||0} cfg={cfgEssai} onVoir={()=>sV("filleuls")}/>}
     {vue==="filleuls"&&<MesFilleuls K={K} mob={mob} uid={uid} cfg={cfgEssai}/>}
-    {vue==="home"&&<Home u={uData} pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} mods={aMods} vids={vids} onOpen={ouvrirModule} onSub={()=>sSub(true)} onVid={()=>sV("videos")} onPres={()=>sV("pres")} onStages={()=>sV("stages")} onEf={()=>sV("ef")} onFisc={()=>sV("fisc")} onFin={()=>sV("fin")} onJrn={()=>sV("jrn")} onCpt={()=>sV("cpt")} onAudio={()=>sV("audio")} live={live} presCount={allPres.filter(estPublie).length} uid={uid} onGo={sV}/>}
+    {vue==="home"&&<Home u={uData} pr={pr} sc={sc} gp={gp} nd={nd} nTot={nTotN1} ok={ok} mods={aMods} vids={vids} onOpen={ouvrirModule} onSub={()=>sSub(true)} onVid={()=>sV("videos")} onPres={()=>sV("pres")} onStages={()=>sV("stages")} onEf={()=>sV("ef")} onFisc={()=>sV("fisc")} onFin={()=>sV("fin")} onJrn={()=>sV("jrn")} onCpt={()=>sV("cpt")} onAudio={()=>sV("audio")} live={live} presCount={allPres.filter(estPublie).length} uid={uid} onGo={sV}/>}
     {vue==="videos"&&<VidsPage ok={ok} onSub={()=>sSub(true)} vids={vids} live={live}/>}
     {vue==="pres"&&<PresPage ok={ok} onSub={()=>sSub(true)} pres={allPres.filter(estPublie)}/>
     }{vue==="stages"&&<StagePage stages={allStages} plats={allPlats} ok={ok}/>
@@ -2892,7 +2893,7 @@ function UA({uid,onOut}){
     {vue==="form"&&<MesFormations K={K} mob={mob} user={uData} mods={aMods} ok={ok} onGo={sV} onExam={sExam} onSub={()=>sSub(true)}/>}
     {vue==="mods"&&<SyscohadaN1 K={K} mob={mob} db={db} uid={uid} scores={sc} progress={pr} ok={ok} onSub={()=>sSub(true)} onGo={sV} onExo={k=>{sExoCpt(k);sV("cpt");window.scrollTo({top:0});}}
       apres={aMods.length>0&&<div style={{marginTop:18}}><ModulesCours mods={aMods} pr={pr} sc={sc} ok={ok} vids={vids} onOpen={ouvrirModule} uid={uid} onSub={()=>sSub(true)} complement/></div>}/>}
-    {vue==="res"&&<MesResultats pr={pr} sc={sc} gp={gp} nd={nd} ok={ok} abonne={abonne} mods={aMods} u={uData} uid={uid} onSub={()=>sSub(true)} onGo={sV}/>}
+    {vue==="res"&&<MesResultats pr={pr} sc={sc} gp={gp} nd={nd} nTot={nTotN1} ok={ok} abonne={abonne} mods={aMods} u={uData} uid={uid} onSub={()=>sSub(true)} onGo={sV}/>}
     {vue==="psycho"&&<PsychoPage uid={uid} u={uData}/>}
     {vue==="param"&&<ParametresPage role="apprenant" uid={uid} data={uData} onOut={onOut} onGo={sV}/>}
     {vue==="ef"&&<EtatsFinanciers key="ef" sansRaccourcis db={db} K={K} mob={mob} me={{uid,nom:uData.nom,mail:uData.mail,role:"apprenant"}} ok={ok} onSub={()=>sSub(true)}/>}
@@ -3534,10 +3535,9 @@ function Nav({u,vue,sV,ok,essai,onSub,onOut,live,uid}){
   </nav>;
 }
 
-function Home({u,pr,sc,gp,nd,ok,mods,vids,onOpen,onSub,onVid,onPres,onStages,onEf,onFisc,onFin,onJrn,onCpt,onAudio,live,presCount=0,uid,onGo}){
+function Home({u,pr,sc,gp,nd,nTot=12,ok,mods,vids,onOpen,onSub,onVid,onPres,onStages,onEf,onFisc,onFin,onJrn,onCpt,onAudio,live,presCount=0,uid,onGo}){
   const K=useK();const{mob}=useW();const jr=jR(u.dateExpiration);
   const{tid}=useContext(Ctx);
-  const mats=[...new Set(mods.map(m=>m.mat||"Général"))];
   const[showCode,sShowCode]=useState(false);
   const rHc=useRef();
   const[hcErr,sHcErr]=useState("");
@@ -3592,9 +3592,9 @@ function Home({u,pr,sc,gp,nd,ok,mods,vids,onOpen,onSub,onVid,onPres,onStages,onE
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,fontWeight:700,letterSpacing:.4,textTransform:"uppercase",background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.22)",borderRadius:99,padding:"5px 11px",marginBottom:12}}><i className="ti ti-sparkles" style={{fontSize:14}}/>Tableau de bord</div>
           <div style={{fontFamily:"'Fraunces',serif",fontSize:mob?27:34,fontWeight:800,marginBottom:6,letterSpacing:"-.4px",lineHeight:1.15}}>Bonjour, {(u.nom||"").split(" ")[0]} 👋</div>
-          <div style={{fontSize:mob?15:16,color:"rgba(255,255,255,.86)",marginBottom:18,lineHeight:1.55,maxWidth:520}}>{!ok?"Abonnez-vous pour accéder à tous les cours.":nd===0?"Commencez votre parcours de formation dès aujourd'hui.":`${nd} module${nd>1?"s":""} sur ${mods.length} complété${nd>1?"s":""}. Continuez sur votre lancée !`}</div>
+          <div style={{fontSize:mob?15:16,color:"rgba(255,255,255,.86)",marginBottom:18,lineHeight:1.55,maxWidth:520}}>{!ok?"Abonnez-vous pour accéder à tous les cours.":nd===0?"Commencez votre parcours de formation dès aujourd'hui.":`${nd} module${nd>1?"s":""} SYSCOHADA sur ${nTot} réussi${nd>1?"s":""}. Continuez sur votre lancée !`}</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
-            {[[`${nd}/${mods.length}`,"Modules","book-2"],[`${gp}%`,"Progression","trending-up"],[`${mats.length}`,"Matières","category"]].map(([v,l,ic])=><div key={l} style={{background:"rgba(255,255,255,.13)",backdropFilter:"blur(8px)",borderRadius:14,padding:"10px 14px",border:"1px solid rgba(255,255,255,.2)",minWidth:mob?0:96,flex:mob?1:"0 0 auto"}}>
+            {[[`${nd}/${nTot}`,"Modules SYSCOHADA","book-2"],[`${gp}%`,"Progression","trending-up"],[`${PARCOURS.length}`,"Parcours certifiants","certificate"]].map(([v,l,ic])=><div key={l} style={{background:"rgba(255,255,255,.13)",backdropFilter:"blur(8px)",borderRadius:14,padding:"10px 14px",border:"1px solid rgba(255,255,255,.2)",minWidth:mob?0:96,flex:mob?1:"0 0 auto"}}>
               <div style={{fontSize:mob?20:22,fontWeight:900,lineHeight:1.1}}>{v}</div>
               <div style={{fontSize:12,color:"rgba(255,255,255,.78)",marginTop:3,display:"flex",alignItems:"center",gap:4}}><i className={`ti ti-${ic}`} style={{fontSize:13}}/>{l}</div>
             </div>)}
@@ -3612,7 +3612,7 @@ function Home({u,pr,sc,gp,nd,ok,mods,vids,onOpen,onSub,onVid,onPres,onStages,onE
 
     {/* Recommandations personnalisées */}
     <Banniere K={K} mob={mob} db={db} uid={uid} user={u} onGo={v=>v==="acces"?onSub&&onSub():v==="fisc"?onFisc&&onFisc():v==="ef"?onEf&&onEf():v==="videos"?onVid&&onVid():v==="pres"?onPres&&onPres():onGo&&onGo(v)}/>
-    <PourVous K={K} mob={mob} u={u} mods={mods} pr={pr} sc={sc} ok={ok} onOpen={onOpen} onSub={onSub} onEf={onEf} onFisc={onFisc}/>
+    <PourVous K={K} mob={mob} u={u} mods={mods} pr={pr} sc={sc} ok={ok} onOpen={onOpen} onSub={onSub} onEf={onEf} onFisc={onFisc} onGo={onGo}/>
     {/* Cartes fonctionnalités */}
     <div style={{marginBottom:22}}>
       <div className="h-sec" style={{color:K.t1,marginBottom:12}}>Accès rapide</div>
@@ -3921,7 +3921,7 @@ function ModulesCours({mods,pr,sc,ok,vids,onOpen,uid,onSub,etat,onExam,onGo,onEl
 // ── MES RÉSULTATS : progression, scores de tous les QCM, badges et attestations ──
 // QCM : modules de cours (clé = id), Code des impôts (FISC-…), Finance d'entreprise (FIN-…), SYCEBNL (SYC-…) → moyenne.
 // Exercices pratiques (« Quel compte ? » CPT-…, monographie JRN-ZAO) : suivis à part, hors moyenne (voir ef/syscohada/scores.js).
-function MesResultats({pr,sc,gp,nd,ok,abonne,mods,u,uid,onSub,onGo}){
+function MesResultats({pr,sc,gp,nd,nTot=12,ok,abonne,mods,u,uid,onSub,onGo}){
   const K=useK();const{mob}=useW();const{tid}=useContext(Ctx);
   const isLight=['light','sepia'].includes(tid);
   const[onglet,sOnglet]=useState("cours");
@@ -3964,7 +3964,7 @@ function MesResultats({pr,sc,gp,nd,ok,abonne,mods,u,uid,onSub,onGo}){
           <ProgressRing pct={pct} size={72} stroke={6} col={col}/><div style={{fontSize:12,color:K.t2,fontWeight:600,textAlign:"center",maxWidth:110}}>{l}</div></div>)}
       </div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        {[[`${nd}/${mods.length}`,"Modules terminés",K.em],[`${qcm.length}`,"QCM passés",K.t2],[`${reussis}`,`Réussis (≥ ${SEUIL_ELEMENT} %)`,K.em],[`${qcm.length-reussis}`,"À retravailler",K.er]].map(([v,l,c])=><div key={l} style={{background:isLight?"rgba(255,255,255,.7)":K.b0,borderRadius:9,padding:"7px 12px",border:`1px solid ${K.b1}`}}><div style={{color:c,fontWeight:800,fontSize:16,lineHeight:1}}>{v}</div><div style={{color:K.t3,fontSize:11,marginTop:2}}>{l}</div></div>)}
+        {[[`${nd}/${nTot}`,"Modules SYSCOHADA réussis",K.em],[`${qcm.length}`,"QCM passés",K.t2],[`${reussis}`,`Réussis (≥ ${SEUIL_ELEMENT} %)`,K.em],[`${qcm.length-reussis}`,"À retravailler",K.er]].map(([v,l,c])=><div key={l} style={{background:isLight?"rgba(255,255,255,.7)":K.b0,borderRadius:9,padding:"7px 12px",border:`1px solid ${K.b1}`}}><div style={{color:c,fontWeight:800,fontSize:16,lineHeight:1}}>{v}</div><div style={{color:K.t3,fontSize:11,marginTop:2}}>{l}</div></div>)}
       </div>
     </div>
     <MesAttestations K={K} mob={mob} db={db} uid={uid} user={u} mods={mods} ok={abonne??ok} onSub={onSub} onGo={onGo}/>

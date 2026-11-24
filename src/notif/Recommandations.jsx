@@ -1,25 +1,29 @@
 import React from"react";
 import{MODULES_FISC}from"../fiscal/modules";
+import{MODULES_SYS1}from"../syscohada/modules";
+import{SEUIL_ELEMENT,etatParcours}from"../attest/regles";
 
-// « Pour vous » : jusqu'à 3 actions recommandées à l'apprenant, calculées à partir de sa progression
-export function recommandations({u,mods=[],pr={},sc={},ok}){
+// « Pour vous » : jusqu'à 3 actions recommandées à l'apprenant, calculées à partir de sa progression.
+// Le parcours de base est le SYSCOHADA Niveau 1 (12 modules du code, scores « SY-S1 »…) : module à refaire sous le seuil,
+// puis prochain module ouvert ; ensuite le Code des impôts et l'atelier États financiers.
+export function recommandations({u,pr={},sc={},ok}){
   const R=[];
-  if(!ok)R.push({k:"acces",ico:"lock-open",col:"#C98A1B",titre:"Débloquez toute la plateforme",texte:"Modules, QCM, Code des impôts et atelier États financiers : demandez votre accès.",act:"sub"});
-  const actifs=mods.filter(m=>m.on!==false).sort((a,b)=>(a.ordre||99)-(b.ordre||99));
-  const faible=actifs.filter(m=>sc[m.id]?.pct!=null&&sc[m.id].pct<60).sort((a,b)=>sc[a.id].pct-sc[b.id].pct)[0];
-  if(faible)R.push({k:"refaire",ico:"refresh",col:"#A3122A",titre:`Refaire le QCM : ${faible.titre}`,texte:`Votre score est de ${sc[faible.id].pct} % : 60 % sont nécessaires pour valider le module.`,act:"mod",mod:faible});
-  const suivant=actifs.find(m=>pr[m.id]!=="done"&&!sc[m.id]);
-  if(suivant)R.push({k:"suivant",ico:"player-play",col:"#1E4FA3",titre:`Continuer : ${suivant.titre}`,texte:suivant.desc||"Le prochain module de votre parcours.",act:"mod",mod:suivant});
-  const fisc=MODULES_FISC.find(m=>(ok||m.libre)&&!((sc[`FISC-${m.id}`]?.pct||0)>=60));
+  if(!ok)R.push({k:"acces",ico:"lock-open",col:"#C98A1B",titre:"Débloquez toute la plateforme",texte:"Tous les parcours certifiants, les examens finaux et les certificats : demandez votre accès.",act:"sub"});
+  const et=etatParcours("SYS-N1",[],{scores:sc,progress:pr}),el=id=>et.elements.find(e=>e.cle===`SY-${id}`);
+  const faible=MODULES_SYS1.filter(m=>{const e=el(m.id);return e.pct!=null&&e.pct<SEUIL_ELEMENT;}).sort((a,b)=>el(a.id).pct-el(b.id).pct)[0];
+  if(faible)R.push({k:"refaire",ico:"refresh",col:"#A3122A",titre:`Refaire le QCM : ${faible.id} · ${faible.court}`,texte:`Votre score est de ${el(faible.id).pct} % : ${SEUIL_ELEMENT} % sont nécessaires pour valider le module.`,act:"n1",mod:faible});
+  const suivant=MODULES_SYS1.find(m=>{const e=el(m.id);return(ok||m.libre)&&e.ouvert&&e.pct==null;});
+  if(suivant)R.push({k:"suivant",ico:"player-play",col:"#1E4FA3",titre:`Continuer : ${suivant.id} · ${suivant.court}`,texte:suivant.resume,act:"n1",mod:suivant});
+  const fisc=MODULES_FISC.find(m=>(ok||m.libre)&&!((sc[`FISC-${m.id}`]?.pct||0)>=SEUIL_ELEMENT));
   if(fisc)R.push({k:"fisc",ico:"receipt-tax",col:"#A3122A",titre:`Code des impôts : ${fisc.id} · ${fisc.court}`,texte:fisc.resume,act:"fisc"});
   if(ok)R.push({k:"ef",ico:"report-money",col:"#1D4ED8",titre:"Atelier États financiers",texte:"Entraînez-vous sur un cas pratique : Bilan, Compte de résultat, TFT et IBP.",act:"ef"});
   if(!R.length)R.push({k:"bravo",ico:"trophy",col:"#0D7A6B",titre:"Bravo, parcours à jour !",texte:"Tous vos modules sont validés. Revenez bientôt pour les nouveautés.",act:""});
   return R.slice(0,3);
 }
 
-export default function PourVous({K,mob,u,mods,pr,sc,ok,onOpen,onSub,onEf,onFisc}){
-  const R=recommandations({u,mods,pr,sc,ok});
-  const go=r=>r.act==="sub"?onSub&&onSub():r.act==="mod"?onOpen&&onOpen(r.mod):r.act==="fisc"?onFisc&&onFisc():r.act==="ef"?onEf&&onEf():null;
+export default function PourVous({K,mob,u,mods,pr,sc,ok,onOpen,onSub,onEf,onFisc,onGo}){
+  const R=recommandations({u,pr,sc,ok});
+  const go=r=>r.act==="sub"?onSub&&onSub():r.act==="n1"?onGo&&onGo("mods"):r.act==="mod"?onOpen&&onOpen(r.mod):r.act==="fisc"?onFisc&&onFisc():r.act==="ef"?onEf&&onEf():null;
   return <div style={{marginBottom:16}}>
     <div className="h-sec" style={{color:K.t1,marginBottom:10,display:"flex",alignItems:"center",gap:7}}><i className="ti ti-sparkles" style={{color:"#C98A1B"}}/>Pour vous</div>
     <div style={{display:"grid",gridTemplateColumns:mob?"1fr":`repeat(${R.length},minmax(0,1fr))`,gap:10}}>
