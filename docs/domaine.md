@@ -46,9 +46,11 @@ service jusqu'à la fin.
 
 ## Étape D — Déployer sur Firebase (30 min, puis je prends le relais)
 
+0. Activez les services utilisés par les fonctions et les tâches planifiées :
+   https://console.cloud.google.com/flows/enableapi?apiid=cloudfunctions.googleapis.com,cloudbuild.googleapis.com,artifactregistry.googleapis.com,run.googleapis.com,eventarc.googleapis.com,cloudscheduler.googleapis.com,firestore.googleapis.com&project=access-plus-consulting
 1. Google Cloud › IAM › **Comptes de service** › créez *github-deploy* avec les rôles :
    *Administrateur Firebase*, *Utilisateur du compte de service*, *Administrateur Cloud Functions*,
-   *Administrateur Cloud Run*, *Administrateur Artifact Registry*.
+   *Administrateur Cloud Run*, *Administrateur Artifact Registry*, *Éditeur Cloud Build*, *Administrateur Cloud Scheduler*.
    Créez une **clé JSON** pour ce compte (téléchargée sur votre ordinateur, à ne jamais envoyer par message ni par e-mail).
 2. GitHub › dépôt › Settings › Secrets and variables › Actions › **New repository secret** :
    nom `FIREBASE_DEPLOY_KEY`, valeur : le contenu du fichier JSON. Supprimez ensuite le fichier de votre ordinateur.
@@ -80,3 +82,20 @@ service jusqu'à la fin.
 - Les comptes, scores, abonnements et attestations des apprenants (même base Firebase).
 - Le service EmailJS `access_plus_service` et l'adresse d'administration `admin@accessplus.com`.
 - Votre qualité d'auteur : `NOTICE.md`, signature des certificats, historique GitHub.
+
+## Automatisations (actives dès le premier déploiement Firebase)
+
+Code : `functions/taches.js` (exécution) et `src/auto/automatisations.js` (règles, testées). Heure de Kinshasa.
+
+| Tâche | Quand | Ce qu'elle fait |
+|---|---|---|
+| `tacheQuotidienne` | Chaque jour à 8 h | Passe en « expiré » les abonnements échus ; rappels J-7 et J-1 avant expiration ; rappel J-2 avant la fin de l'essai ; relance des apprenants inactifs depuis 7 jours (une fois, jusqu'à 30 jours). |
+| `tacheHoraire` | Toutes les heures (h+15) | Récompense automatiquement le parrain quand un filleul s'abonne par un vrai paiement (pas un code offert), une seule fois ; alerte l'administrateur si une demande d'accès attend depuis la veille ou si une référence de paiement est déclarée par plusieurs comptes. |
+| `rapportHebdo` | Lundi à 7 h | Rapport de la semaine dans la cloche de l'administrateur (et en push) ; chiffres conservés dans la collection `rapports`. |
+| `sauvegardeNocturne` | Chaque nuit à 2 h | Export complet de Firestore dans le stockage du projet (`sauvegardes/AAAA-MM-JJ/`), sauvegardes de plus de 30 jours supprimées. |
+
+- Chaque passage est noté dans la collection `journalTaches` ; les relances déjà envoyées sont mémorisées dans `users/{uid}.relances`.
+- La durée offerte au parrain est celle réglée dans Admin › Essai et parrainage (« Jours offerts au parrain »).
+- Messages envoyés dans l'application (cloche) et en notification push ; l'envoi d'e-mails depuis le serveur viendra dans un second temps.
+- Sauvegarde : si le journal signale un refus de droits, ajoutez au compte de service par défaut de Compute Engine
+  (`…-compute@developer.gserviceaccount.com`) le rôle *Administrateur de l'importation/exportation Cloud Datastore*.
