@@ -4,8 +4,8 @@
 const fs = require("fs"), path = require("path");
 const RACINE = path.join(__dirname, ".."), ICI = __dirname;
 const FICHIERS = [
-  "api/_admin.js", "api/attestation.js", "api/filleuls.js", "api/push.js", "api/tableau.js",
-  "src/attest/regles.js", "src/essai/reglesEssai.js", "src/admin/indicateurs.js",
+  "api/_admin.js", "api/_push.js", "api/attestation.js", "api/filleuls.js", "api/push.js", "api/tableau.js",
+  "src/attest/regles.js", "src/essai/reglesEssai.js", "src/admin/indicateurs.js", "src/auto/automatisations.js", "src/site.js",
 ];
 for (const d of ["api", "src"]) fs.rmSync(path.join(ICI, d), { recursive: true, force: true });
 for (const f of FICHIERS) {

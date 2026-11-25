@@ -17,3 +17,6 @@ exports.api = onRequest({ region: "europe-west1", memory: "256MiB", timeoutSecon
   if (!route) return res.status(404).json({ ok: false, raison: "Route inconnue." });
   return route()(req, res);
 });
+
+// Tâches automatiques planifiées (abonnements et relances, parrainage, alertes, rapport, sauvegarde) : voir taches.js
+Object.assign(exports, require("./taches"));

@@ -5,9 +5,9 @@
 // GET  /api/push            → { configure: true|false }
 // POST /api/push {notifId}  (en-tête Authorization: Bearer <jeton d'identité Firebase de l'expéditeur>)
 const { admin, init, configure } = require("./_admin");
+const { pousser } = require("./_push");
 
 const ADMIN_EMAIL = "admin@accessplus.com";
-const ROLE_GROUPE = { apprenants: "apprenant", formateurs: "formateur", admin: "admin" };
 const FRAICHEUR_MS = 10 * 60 * 1000; // seules les notifications des 10 dernières minutes sont poussées
 
 
@@ -34,30 +34,7 @@ module.exports = async (req, res) => {
   if (Date.now() - t > FRAICHEUR_MS) return res.status(410).json({ ok: false, raison: "Notification trop ancienne" });
   await ref.update({ pushEnvoye: admin.firestore.FieldValue.serverTimestamp() });
 
-  // Appareils destinataires
-  let q = db.collection("pushTokens");
-  if (ROLE_GROUPE[n.dest]) q = q.where("role", "==", ROLE_GROUPE[n.dest]);
-  else if (n.dest !== "all") q = q.where("uid", "==", n.dest);
-  const jetons = (await q.get()).docs.map(d => d.id).filter(j => j);
-  if (!jetons.length) return res.status(200).json({ ok: true, envoyes: 0 });
-
   const base = `https://${req.headers["x-forwarded-host"] || req.headers.host}`;
-  const lien = n.vue ? `${base}/?vue=${encodeURIComponent(n.vue)}` : `${base}/`;
-  const corps = String(n.texte || "").slice(0, 180);
-  let envoyes = 0, invalides = [];
-  for (let i = 0; i < jetons.length; i += 500) {
-    const lot = jetons.slice(i, i + 500);
-    const r = await admin.messaging().sendEachForMulticast({
-      tokens: lot,
-      data: { titre: String(n.titre || "Éco-Campus RDC"), texte: corps, lien, id: notifId },
-      webpush: { headers: { Urgency: "high", TTL: "86400" }, fcmOptions: { link: lien } },
-    });
-    envoyes += r.successCount;
-    r.responses.forEach((x, k) => {
-      const c = x.error && x.error.code;
-      if (c === "messaging/registration-token-not-registered" || c === "messaging/invalid-registration-token" || c === "messaging/invalid-argument") invalides.push(lot[k]);
-    });
-  }
-  await Promise.all(invalides.map(j => db.collection("pushTokens").doc(j).delete().catch(() => {})));
-  return res.status(200).json({ ok: true, envoyes, invalides: invalides.length });
+  const r = await pousser(admin, notifId, n, base);
+  return res.status(200).json({ ok: true, ...r });
 };
