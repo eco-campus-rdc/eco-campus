@@ -22,6 +22,8 @@ export const FORMATIONS = [
     resume: "Le Guide comptable de la BCC : dépôts, crédits, compensation, devises, créances en souffrance, états financiers et analyse d'une banque." },
   { id: "SYCEBNL", ico: "building-community", col: "#0F766E", niveau: "Spécialisation", libre: "SB1",
     resume: "Associations, ONG, fondations, églises : dotations, fonds affectés, bailleurs, bénévolat et analyse financière." },
+  { id: "IFRS", ico: "world", col: "#0F766E", niveau: "Spécialisation", libre: "IF1",
+    resume: "Les normes IFRS vues d'une banque : IFRS 9 (classement, TIE, pertes attendues), IFRS 15 et 16, impôts différés, devises USD/CDF, dépréciations, provisions et groupes, avec simulateurs, arbres de décision et flashcards." },
   { id: "DTRAV", ico: "scale", col: "#7C3AED", niveau: "Intermédiaire", libre: "DT1",
     resume: "Le Code du travail et la réforme de 2016 : contrats, essai, discipline, maternité, temps de travail, congés, préavis, licenciement et recours." },
   { id: "ETHIQ", ico: "compass", col: "#B91C1C", niveau: "Tous publics", libre: "ET1",

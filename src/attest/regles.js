@@ -80,6 +80,14 @@ const MIN = [
   ["MI5", "Communautés, environnement et droits humains"], ["MI6", "Transparence, contrôle et contenu local"],
 ];
 const cleMin = id => `MI-${id}`;
+// Les IFRS expliquées, orientées banque (aligné sur src/ifrs/modules — vérifié par les tests)
+const IFRS = [
+  ["IF1", "Le socle : cadre conceptuel, états financiers et carte des normes"], ["IF2", "IFRS 9 (1) : classer les instruments financiers, juste valeur et présentation"],
+  ["IF3", "IFRS 9 (2) : coût amorti et taux d'intérêt effectif"], ["IF4", "IFRS 9 (3) : dépréciation ECL et IFRS 7"],
+  ["IF5", "IFRS 15 et IFRS 16 : commissions et contrats de location"], ["IF6", "IAS 12 et IAS 21 : impôts différés et devises USD / CDF"],
+  ["IF7", "Immobilisations, dépréciations, provisions et avantages du personnel"], ["IF8", "Groupes, informations à fournir et révision générale"],
+];
+const cleIfrs = id => `IF-${id}`;
 // SYSCOHADA révisé, niveau 1 : 12 modules (aligné sur src/syscohada/modules — vérifié par les tests)
 const SYS1 = [
   ["S1", "Le cadre OHADA et les principes comptables"], ["S2", "La partie double : journal, grand livre et balance"],
@@ -108,6 +116,7 @@ const EXAMENS = {
   DTRAV: { cle: "DT-FINAL", nbQ: 30, heures: 1, vue: "dtrav", progressif: true },
   ETHIQ: { cle: "ET-FINAL", nbQ: 30, heures: 1, vue: "ethique", progressif: true },
   MINES: { cle: "MI-FINAL", nbQ: 30, heures: 1, vue: "mines", progressif: true },
+  IFRS: { cle: "IF-FINAL", nbQ: 30, heures: 1, vue: "ifrs", progressif: true },
 };
 
 const PARCOURS = [
@@ -131,6 +140,8 @@ const PARCOURS = [
     description: "Les 8 modules d'éthique en 4 niveaux (facile : bases et méthode ; moyen : théories, argent et conflits d'intérêts ; difficile : éthique du comptable, confidentialité et lancement d'alerte ; très avancé : éthique publique et redevabilité, dilemmes du numérique, de la santé et de l'environnement), avec caricatures et cas pratiques, et l'examen final de 30 questions, coefficient 2." },
   { id: "MINES", titre: "Le Code minier expliqué — loi n° 007/2002 révisée en 2018", court: "Code minier", certificat: true,
     description: "Les 6 modules du Code minier congolais (propriété du sous-sol et acteurs, droits miniers et parts de l'État, exploitation artisanale et traçabilité, redevance, impôts et superprofits, communautés, environnement et droits humains, transparence et contenu local), avec caricatures animées, un simulateur de redevance et l'examen final de 30 questions, coefficient 2." },
+  { id: "IFRS", titre: "Les IFRS expliquées — normes internationales, orientées banque", court: "IFRS", certificat: true,
+    description: "Les 8 modules IFRS (socle et carte des 42 normes ; IFRS 9 : classement, coût amorti et TIE, pertes attendues ECL ; IFRS 15 et 16 ; IAS 12 et IAS 21 ; immobilisations, dépréciations, provisions et IAS 19 ; groupes et informations à fournir), avec simulateurs, arbres de décision, flashcards à répétition espacée et l'examen final de 30 questions, coefficient 2." },
 ];
 
 // Modules de cours pris en compte : ceux publiés (on !== false), dans l'ordre du catalogue
@@ -154,6 +165,8 @@ function elementsBase(id, modules) {
   if (id === "DTRAV") return DT.map(([f, t]) => ({ cle: cleDt(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   // 1 h par module (leçon, caricature, cas pratique, audio, QCM)
   // 1 h 30 par module (leçon, caricature animée, simulateur, audio, QCM)
+  // 2 h par module (leçon, simulateurs, arbres de décision, flashcards, audio, QCM)
+  if (id === "IFRS") return IFRS.map(([f, t]) => ({ cle: cleIfrs(f), titre: `${f} · ${t}`, heures: 2, evalue: true }));
   if (id === "MINES") return MIN.map(([f, t]) => ({ cle: cleMin(f), titre: `${f} · ${t}`, heures: 1.5, evalue: true }));
   if (id === "ETHIQ") return ETH.map(([f, t]) => ({ cle: cleEth(f), titre: `${f} · ${t}`, heures: 1, evalue: true }));
   if (id === "EDUF") return EF.map(([f, t]) => ({ cle: cleEf(f), titre: `${f} · ${t}`, heures: 1, evalue: true }));
@@ -233,4 +246,4 @@ function numeroAttestation(alea = Math.random, annee = new Date().getFullYear())
 }
 const numeroValide = n => /^EC-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/.test(String(n || ""));
 
-module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, SYS1, cleSys1, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
+module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, IFRS, cleIfrs, SYS1, cleSys1, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };

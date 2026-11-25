@@ -7,7 +7,8 @@
 // - EDUF : banque formée des QCM des 8 modules d'éducation financière ;
 // - DTRAV : banque formée des QCM des 6 modules de droit du travail ;
 // - ETHIQ : banque formée des QCM des 8 modules d'éthique (tous les niveaux) ;
-// - MINES : banque formée des QCM des 6 modules du Code minier.
+// - MINES : banque formée des QCM des 6 modules du Code minier ;
+// - IFRS : banque formée des QCM des 8 modules IFRS.
 import { MODULES_FISC } from "../fiscal/modules";
 import { MODULES_FIN } from "../finance/modules";
 import { EXAMEN_SYC } from "../sycebnl/examen";
@@ -16,6 +17,7 @@ import { MODULES_EDUF } from "../eduf/modules";
 import { MODULES_DT } from "../travail/modules";
 import { MODULES_ETH } from "../ethique/modules";
 import { MODULES_MINES } from "../mines/modules";
+import { MODULES_IFRS } from "../ifrs/modules";
 import { MODULES_SYS1 } from "../syscohada/modules";
 import { enonce } from "../ef/syscohada/exercice";
 
@@ -116,4 +118,5 @@ export const EXAMENS_FINAUX = {
   DTRAV: { titre: "Examen final — Droit du travail en RDC", col: "#7C3AED", charger: () => avecModule(MODULES_DT) },
   ETHIQ: { titre: "Examen final — Questions et dilemmes éthiques", col: "#B91C1C", charger: () => avecModule(MODULES_ETH) },
   MINES: { titre: "Examen final — Le Code minier expliqué", col: "#92400E", charger: () => avecModule(MODULES_MINES) },
+  IFRS: { titre: "Examen final — Les IFRS expliquées", col: "#0F766E", charger: () => avecModule(MODULES_IFRS) },
 };

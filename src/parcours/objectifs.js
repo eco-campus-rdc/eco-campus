@@ -119,6 +119,17 @@ export const OBJECTIFS = {
       "Utiliser la transparence (contrats, paiements, propriétaires réels, ITIE) pour exiger des comptes, et appliquer les règles de contenu local.",
     ],
   },
+  IFRS: {
+    general: "Comprendre les normes IFRS telles qu'elles s'appliquent à une banque, savoir les comparer au SYSCOHADA et produire les principaux retraitements.",
+    competences: [
+      "Situer chaque question dans la carte des normes et expliquer la logique des IFRS face au SYSCOHADA.",
+      "Classer les instruments financiers selon IFRS 9 et mesurer leur juste valeur selon IFRS 13.",
+      "Calculer le coût amorti, le taux d'intérêt effectif et les pertes de crédit attendues en 3 stades.",
+      "Appliquer IFRS 15 aux commissions et IFRS 16 aux baux d'agences.",
+      "Calculer les impôts différés et traiter les opérations en USD et en CDF selon IAS 21.",
+      "Tester la dépréciation d'une agence, décider d'une provision et analyser le contrôle d'une filiale.",
+    ],
+  },
   DTRAV: {
     general: "Connaître et appliquer le Code du travail congolais, à jour de la réforme de 2016, du côté du travailleur comme de l'employeur.",
     competences: [
