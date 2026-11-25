@@ -1,0 +1,14 @@
+{
+  "name": "eco-campus-functions",
+  "private": true,
+  "description": "Fonctions serveur d'Éco-Campus RDC sur Firebase (attestation, filleuls, push, tableau). Le code vient du dossier api/ : voir preparer.js.",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "scripts": {
+    "preparer": "node preparer.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  }
+}

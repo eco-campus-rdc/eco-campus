@@ -1,0 +1,4 @@
+# Copies faites par preparer.js avant chaque déploiement : la source de vérité est api/ et src/ à la racine
+api/
+src/
+node_modules/

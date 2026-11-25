@@ -8,11 +8,12 @@
 
 // Règles de l'essai (durées, date d'inscription, état de l'essai) : src/essai/reglesEssai.js, partagé avec le serveur
 import { ESSAI_DEFAUT, JOUR, lireConfigEssai, dateEnMs, etatEssai } from "./reglesEssai";
+import { SITE_URL } from "../site";
 export { ESSAI_DEFAUT, lireConfigEssai, dateEnMs, etatEssai };
 
 // ── Parrainage ──
 export const UID_VALIDE = /^[A-Za-z0-9]{20,40}$/;
-export const lienParrainage = (uid, origine = "https://eco-campus-rdc.vercel.app") => `${origine.replace(/\/$/, "")}/?parrain=${uid}`;
+export const lienParrainage = (uid, origine = SITE_URL) => `${origine.replace(/\/$/, "")}/?parrain=${uid}`;
 export const parrainDepuisUrl = search => { try { const v = new URLSearchParams(search || "").get("parrain"); return v && UID_VALIDE.test(v) ? v : null; } catch { return null; } };
 export const texteParrainage = (lien, cfg) => {
   const c = lireConfigEssai(cfg);
