@@ -4,16 +4,9 @@
 // d'inscription, statut (inscrit, en essai, abonné, récompense versée). Ni e-mail, ni téléphone, ni notes.
 // Variable d'environnement requise : FIREBASE_SERVICE_ACCOUNT (la même que pour /api/attestation et /api/tableau).
 // GET /api/filleuls (en-tête Authorization: Bearer <jeton d'identité Firebase>) → { ok, filleuls, totaux, recompenseJours, … }
-const admin = require("firebase-admin");
+const { admin, init, configure } = require("./_admin");
 const { resumeFilleuls } = require("../src/essai/reglesEssai");
 
-function init() {
-  if (admin.apps.length) return true;
-  const brut = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!brut) return false;
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(brut)) });
-  return true;
-}
 
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");

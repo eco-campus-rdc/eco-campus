@@ -1,0 +1,53 @@
+# Déploiement d'Éco-Campus RDC sur Firebase (hébergement + fonctions serveur), à chaque mise à jour de main.
+# Clé requise : secret FIREBASE_DEPLOY_KEY (clé JSON d'un compte de service de déploiement, voir docs/domaine.md).
+# Sans ce secret, le flux s'arrête proprement avec une note : rien n'est déployé et le site Vercel reste en service.
+name: Déploiement Firebase
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLE: ${{ secrets.FIREBASE_DEPLOY_KEY }}
+    steps:
+      - name: Clé de déploiement absente
+        if: env.CLE == ''
+        run: |
+          echo "::notice::Secret FIREBASE_DEPLOY_KEY absent, déploiement Firebase ignoré (voir docs/domaine.md)."
+
+      - uses: actions/checkout@v4
+        if: env.CLE != ''
+
+      - uses: actions/setup-node@v4
+        if: env.CLE != ''
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Installer, tester et construire l'application
+        if: env.CLE != ''
+        run: |
+          npm ci
+          CI=true npx react-scripts test --watchAll=false
+          npm run build
+
+      - name: Installer les dépendances des fonctions
+        if: env.CLE != ''
+        run: npm install --prefix functions --omit=dev
+
+      - uses: google-github-actions/auth@v2
+        if: env.CLE != ''
+        with:
+          credentials_json: ${{ secrets.FIREBASE_DEPLOY_KEY }}
+
+      - name: Déployer sur Firebase (hébergement et fonctions)
+        if: env.CLE != ''
+        run: npx --yes firebase-tools@13 deploy --only hosting,functions --project access-plus-consulting --non-interactive --force

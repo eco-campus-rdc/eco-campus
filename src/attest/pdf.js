@@ -1,6 +1,7 @@
 // ══════════════ ATTESTATION : DOCUMENT PDF ══════════════
 // Généré dans le navigateur à partir de l'attestation délivrée par le serveur (attestations/{numero}).
 // jsPDF et le générateur de QR code sont chargés à la demande (cdnjs) ; sans QR code, le lien reste imprimé.
+import { SITE_LABEL } from "../site";
 
 const charger = (src, test) => new Promise((ok, ko) => {
   if (test()) return ok(test());
@@ -80,7 +81,7 @@ export async function telechargerAttestation(a) {
   d.setFontSize(7.5); d.setTextColor(110, 110, 110);
   d.text(`Vérifier l'authenticité : ${lien}${E.length ? "  ·  Relevé de notes en page 2" : ""}`, C, 192, { align: "center" });
   d.setFont("helvetica", "bold"); d.setTextColor(10, 42, 92); d.setFontSize(8.5);
-  d.text("Éco-Campus RDC · eco-campus-rdc.vercel.app · +243 979 075 970", C, 197, { align: "center" });
+  d.text(`Éco-Campus RDC · ${SITE_LABEL} · +243 979 075 970`, C, 197, { align: "center" });
   if (E.length) releve(d, a, { certificat, reussite, lien, qrcode });
   d.save(`${certificat ? "certificat" : "attestation"}-${a.numero}.pdf`);
 }

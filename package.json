@@ -2,6 +2,7 @@
   "name": "access-plus-consulting",
   "version": "1.1.0",
   "private": true,
+  "author": "Gédéon NKULI",
   "dependencies": {
     "firebase": "^9.23.0",
     "firebase-admin": "^12.7.0",

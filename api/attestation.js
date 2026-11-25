@@ -4,16 +4,9 @@
 // GET  /api/attestation                         → { configure: true|false }
 // POST /api/attestation { parcours, type }      (en-tête Authorization: Bearer <jeton d'identité Firebase>)
 //      type : "suivi" | "reussite" → { ok, attestation } ; une attestation valide existante est renvoyée telle quelle.
-const admin = require("firebase-admin");
+const { admin, init, configure } = require("./_admin");
 const R = require("../src/attest/regles");
 
-function init() {
-  if (admin.apps.length) return true;
-  const brut = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!brut) return false;
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(brut)) });
-  return true;
-}
 
 // « 03/10/2026 » ou ISO → ISO (date d'inscription, début de la période de formation)
 function versIso(d) {
@@ -25,7 +18,7 @@ function versIso(d) {
 }
 
 module.exports = async (req, res) => {
-  if (req.method === "GET") return res.status(200).json({ configure: !!process.env.FIREBASE_SERVICE_ACCOUNT });
+  if (req.method === "GET") return res.status(200).json({ configure: configure() });
   if (req.method !== "POST") return res.status(405).json({ ok: false });
   try { if (!init()) return res.status(503).json({ ok: false, raison: "Délivrance non configurée sur le serveur (clé FIREBASE_SERVICE_ACCOUNT absente)." }); }
   catch (e) { return res.status(500).json({ ok: false, raison: "Clé de compte de service invalide." }); }

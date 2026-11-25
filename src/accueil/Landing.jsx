@@ -2,6 +2,7 @@ import React,{useEffect,useState}from"react";
 import{PARCOURS,EXAMENS,SEUIL_ELEMENT,SEUIL_MOYENNE,elementsParcours}from"../attest/regles";
 import{FORMATIONS}from"../parcours/MesFormations";
 import{OBJECTIFS}from"../parcours/objectifs";
+import{CONTACT_EMAIL}from"../site";
 
 // ══════════════════ PAGE D'ACCUEIL PUBLIQUE (visiteurs non connectés) ══════════════════
 // Présente le catalogue réel : les parcours certifiants (mêmes données que « Mes formations » et les certificats),
@@ -218,7 +219,7 @@ export default function Landing({K,mob,onLogin,logo,logoClair,sombre}){
       <div style={{fontSize:13,color:K.t3}}>© {new Date().getFullYear()} Éco-Campus RDC · Access Plus Consulting, Kinshasa</div>
       <div style={{fontSize:13,color:K.t3,display:"flex",gap:"6px 16px",flexWrap:"wrap"}}>
         <a href="/confidentialite.html" style={{color:K.t3,textDecoration:"none"}}>Confidentialité</a>
-        <span>gnkuli@outlook.fr</span>
+        <span>{CONTACT_EMAIL}</span>
         <a href="https://wa.me/243979075970" target="_blank" rel="noreferrer" style={{color:K.t3,textDecoration:"none"}}>WhatsApp +243 979 075 970</a>
       </div>
     </footer>

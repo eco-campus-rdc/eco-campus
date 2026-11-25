@@ -5,18 +5,11 @@
 // GET /api/tableau (en-tête Authorization: Bearer <jeton d'identité Firebase>) → { ok, genereLe, groupes, parcours, listes, inscrits? }
 // Listes nominatives (inscrits, abonnés) : seulement pour l'administrateur et les observateurs de config/observateurs.listes,
 // avec des champs limités (src/admin/indicateurs.js, listeInscrits). Aucune écriture : la fonction ne fait que lire.
-const admin = require("firebase-admin");
+const { admin, init, configure } = require("./_admin");
 const { indicateurs, listeInscrits } = require("../src/admin/indicateurs");
 
 const ADMIN = "admin@accessplus.com";
 
-function init() {
-  if (admin.apps.length) return true;
-  const brut = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!brut) return false;
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(brut)) });
-  return true;
-}
 
 const tout = async (db, nom) => (await db.collection(nom).get()).docs.map(d => ({ id: d.id, ...d.data() }));
 

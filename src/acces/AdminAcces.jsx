@@ -1,9 +1,10 @@
 import React,{useState,useEffect}from"react";
 import{collection,doc,onSnapshot,setDoc,deleteDoc,writeBatch,serverTimestamp}from"firebase/firestore";
 import{DUR,OFFRES,OPERATEURS,offresAvecPrix,parMois,fUSD,usePaiement,nouveauCodeOffert}from"./acces";
+import{SITE_URL}from"../site";
 
 // Onglet admin « Accès » : tarifs et numéros Mobile Money (config/paiement), codes offerts (bons).
-export const URL_APP="https://eco-campus-rdc.vercel.app";
+export const URL_APP=SITE_URL;
 export const texteInvitation=(code,duree)=>`Bonjour ! Voici votre code d'accès offert à Éco-Campus RDC (${duree}) : ${code}\n\n1. Créez votre compte sur ${URL_APP}\n2. Touchez la clé 🔑 « J'ai un code » en haut de l'écran\n3. Saisissez le code : tous les contenus s'ouvrent.`;
 const MAX_LOT=50;
 

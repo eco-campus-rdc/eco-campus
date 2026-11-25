@@ -4,22 +4,15 @@
 //   (console Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée).
 // GET  /api/push            → { configure: true|false }
 // POST /api/push {notifId}  (en-tête Authorization: Bearer <jeton d'identité Firebase de l'expéditeur>)
-const admin = require("firebase-admin");
+const { admin, init, configure } = require("./_admin");
 
 const ADMIN_EMAIL = "admin@accessplus.com";
 const ROLE_GROUPE = { apprenants: "apprenant", formateurs: "formateur", admin: "admin" };
 const FRAICHEUR_MS = 10 * 60 * 1000; // seules les notifications des 10 dernières minutes sont poussées
 
-function init() {
-  if (admin.apps.length) return true;
-  const brut = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!brut) return false;
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(brut)) });
-  return true;
-}
 
 module.exports = async (req, res) => {
-  if (req.method === "GET") return res.status(200).json({ configure: !!process.env.FIREBASE_SERVICE_ACCOUNT });
+  if (req.method === "GET") return res.status(200).json({ configure: configure() });
   if (req.method !== "POST") return res.status(405).json({ ok: false });
   try { if (!init()) return res.status(503).json({ ok: false, raison: "Push non configuré" }); }
   catch (e) { return res.status(500).json({ ok: false, raison: "Clé de compte de service invalide" }); }

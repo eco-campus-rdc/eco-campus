@@ -1,7 +1,8 @@
 // Mise en page HTML des e-mails envoyés par EmailJS.
 // Les modèles EmailJS (template_3v1a6i6 et template_aisjy5e) contiennent seulement {{{html}}} :
 // le design se règle ici, sans retourner dans le tableau de bord EmailJS.
-const SITE = "https://eco-campus-rdc.vercel.app";
+import { SITE_URL } from "./site";
+const SITE = SITE_URL;
 const esc = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const cadre = (contenu, piedDePage) => `<div style="margin:0;padding:24px 12px;background:#F4F6FB;font-family:Arial,Helvetica,sans-serif;">
