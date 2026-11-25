@@ -72,7 +72,7 @@ export default function Landing({K,mob,onLogin,logo,logoClair,sombre}){
             Maîtrisez la comptabilité, la fiscalité et la finance <span style={{color:OR}}>telles qu'on les pratique en RDC</span>
           </h1>
           <p style={{margin:"0 0 24px",fontSize:mob?15.5:18,lineHeight:1.65,color:"rgba(255,255,255,.88)",maxWidth:560}}>
-            {cat.length} parcours certifiants : SYSCOHADA révisé, fiscalité à jour de la réforme 2026, comptabilité bancaire, finance d'entreprise, SYCEBNL, droit du travail, éthique, Code minier et éducation financière pour tous. Des leçons claires, des exemples en francs congolais, un examen final et un certificat vérifiable.
+            {cat.length} parcours certifiants : SYSCOHADA révisé, fiscalité à jour de la réforme 2026, comptabilité bancaire, finance d'entreprise, SYCEBNL, droit du travail, éthique, Code minier, IFRS et éducation financière pour tous. Des leçons claires, des exemples en francs congolais, un examen final et un certificat vérifiable.
           </p>
           <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:18}}>
             <button onClick={onLogin} className="bt" style={{...btnP,flex:mob?"1 1 100%":"0 0 auto"}}>Créer mon compte gratuit<i className="ti ti-arrow-right" style={{fontSize:18}}/></button>

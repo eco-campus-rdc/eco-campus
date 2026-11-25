@@ -455,6 +455,48 @@ export const OBJECTIFS_MODULES = {
     "Appliquer les règles de contenu local et repérer un montage de prête-nom.",
   ],
 
+  // ── IFRS ──
+  IF1: [
+    "Expliquer en quoi la logique des IFRS (substance, contrôle, pertes attendues) diffère du SYSCOHADA.",
+    "Situer une question dans la carte des normes et citer les normes du socle (cadre conceptuel, IFRS 18, IAS 7, 8 et 10).",
+    "Distinguer une correction d'erreur (rétrospective) d'un changement d'estimation (prospectif).",
+  ],
+  IF2: [
+    "Appliquer le test SPPI et le modèle de gestion pour classer un actif financier selon IFRS 9.",
+    "Classer une juste valeur dans les niveaux 1, 2 ou 3 d'IFRS 13.",
+    "Distinguer une dette d'un instrument de capitaux propres selon IAS 32.",
+  ],
+  IF3: [
+    "Calculer la valeur initiale d'un crédit et son taux d'intérêt effectif.",
+    "Établir le tableau du coût amorti et passer les écritures d'intérêts.",
+    "Expliquer pourquoi les frais de dossier sont étalés dans la marge d'intérêt.",
+  ],
+  IF4: [
+    "Classer un crédit en stade 1, 2 ou 3 selon les jours de retard et la dégradation du risque.",
+    "Calculer une perte attendue avec EAD, PD et LGD et l'effet falaise du stade 2.",
+    "Citer les informations sur les risques exigées par IFRS 7.",
+  ],
+  IF5: [
+    "Appliquer les 5 étapes d'IFRS 15 à un forfait bancaire et calculer le passif sur contrat.",
+    "Calculer la dette locative et le droit d'utilisation d'un bail selon IFRS 16.",
+    "Comparer la charge IFRS 16 et la charge de loyer du SYSCOHADA.",
+  ],
+  IF6: [
+    "Déterminer un impôt différé actif ou passif à partir de la valeur comptable et de la base fiscale.",
+    "Appliquer le cours de clôture ou le cours historique selon la nature monétaire d'un élément en USD.",
+    "Expliquer la monnaie fonctionnelle et le retraitement en cas d'hyperinflation.",
+  ],
+  IF7: [
+    "Calculer un amortissement par composants et réaliser le test de dépréciation d'une UGT.",
+    "Décider entre provision, passif éventuel ou rien selon IAS 37, et mesurer la provision.",
+    "Reconnaître les actifs relevant d'IAS 38, d'IAS 40, d'IFRS 5 et les engagements d'IAS 19.",
+  ],
+  IF8: [
+    "Analyser le contrôle d'une entité avec les trois critères d'IFRS 10.",
+    "Calculer un goodwill et choisir entre intégration globale, mise en équivalence et juste valeur.",
+    "Identifier les informations sur les parties liées, les secteurs et le résultat par action.",
+  ],
+
   // ── Droit du travail ──
   DT1: [
     "Définir le travailleur, l'employeur et le contrat de travail au sens du Code.",
