@@ -108,7 +108,7 @@ const COEF_FINAL = 2;
 const EXAMENS = {
   "SYS-N1": { cle: "SYS1-FINAL", nbQ: 30, heures: 1, vue: "mods", progressif: true },
   FISC: { cle: "FISC-FINAL", nbQ: 40, heures: 1.5, vue: "fisc", progressif: true },
-  "SYS-N2": { cle: "SYS2-FINAL", nbQ: 30, heures: 1, vue: "jrn", progressif: false },
+  "SYS-N2": { cle: "SYS2-FINAL", nbQ: 30, heures: 1, vue: "jrn", progressif: true },
   FIN: { cle: "FIN-FINAL", nbQ: 30, heures: 1, vue: "fin", progressif: true },
   SYCEBNL: { cle: CLE_FINAL_SYC, nbQ: 30, heures: 1, vue: "syc", progressif: true },
   BANQUE: { cle: "BQ-FINAL", nbQ: 30, heures: 1, vue: "banq", progressif: true },
@@ -239,6 +239,17 @@ function evaluer(id, modules, user) {
 
 // Numéro d'attestation : EC-AAAA-XXXXXX (alphabet sans caractères ambigus : ni 0/O, ni 1/I/L)
 const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+// Exercice « Quel compte ? » ouvert depuis le Guide des comptes : même ordre que les parcours.
+// k = 0 (toutes classes) : élément CPT-T du Niveau 1 ; k = 1 à 9 : élément CPT-k du Niveau 2 (après la monographie ZAO).
+// Renvoie null si l'exercice est ouvert, sinon la raison du verrou.
+function verrouCpt(k, user) {
+  const id = k ? "SYS-N2" : "SYS-N1", cle = `CPT-${k || "T"}`;
+  const e = etatParcours(id, [], user).elements.find(x => x.cle === cle);
+  if (!e || e.ouvert) return null;
+  const avant = !k ? "le module S12 du Niveau 1 est réussi" : k === 1 ? "la monographie ZAO IMMO est réussie" : `la série de la classe ${k - 1} est réussie`;
+  return `S'ouvre quand ${avant} à ${SEUIL_ELEMENT} %.`;
+}
+
 function numeroAttestation(alea = Math.random, annee = new Date().getFullYear()) {
   let s = "";
   for (let i = 0; i < 6; i++) s += ALPHABET[Math.floor(alea() * ALPHABET.length) % ALPHABET.length];
@@ -246,4 +257,4 @@ function numeroAttestation(alea = Math.random, annee = new Date().getFullYear())
 }
 const numeroValide = n => /^EC-\d{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/.test(String(n || ""));
 
-module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, IFRS, cleIfrs, SYS1, cleSys1, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
+module.exports = { SEUIL_ELEMENT, SEUIL_MOYENNE, SIGNATAIRE, ORGANISME, FISC, FIN, SYC, BQ, cleBq, EF, cleEf, DT, cleDt, ETH, cleEth, MIN, cleMin, IFRS, cleIfrs, SYS1, cleSys1, CLE_FINAL_SYC, COEF_FINAL_SYC, COEF_FINAL, EXAMENS, cleSyc, etatSyc, etatParcours, verrouCpt, PARCOURS, elementsBase, elementsParcours, evaluer, mention, numeroAttestation, numeroValide, modulesActifs };
