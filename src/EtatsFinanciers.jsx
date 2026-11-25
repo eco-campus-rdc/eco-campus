@@ -7,6 +7,7 @@ import{DEVISES,FORMES,PROVINCES,IDENTITE,FISC_DEFAUT,CATEGORIES,FORFAIT_SANS_CA,
 import{REGLES,ficheCompte,anomaliesSens,rubriqueDe}from"./ef/guide";
 import GuideComptes from"./ef/GuideComptes";
 import{cleCpt,fusionScore}from"./ef/syscohada/scores";
+import{verrouCpt}from"./attest/regles";
 import{computeNotes,fmtPct,TRANCHES,NATURES_TITRES,EFF_COLS,EFF_PROPRE,EFF_STATUT,EFF_EXT}from"./ef/notes";
 import{LIB_ACCES}from"./acces/plateforme";
 
@@ -402,6 +403,8 @@ function FicheModal({K,ligne,onClose}){
   return <Modal K={K} title={`Compte ${c}${ligne.l?` — ${ligne.l}`:""}`} onClose={onClose}><FicheContenu K={K} c={c} f={f} ligne={ligne}/></Modal>;
 }
 function GuideView({K,mob,lignes,db,me,exo0=null}){
+  // Formateurs et administrateur : tout est ouvert ; apprenants : ordre des parcours SYSCOHADA N1 et N2
+  const staff=me&&(me.role==="formateur"||me.role==="admin");
   // Exercice « Quel compte ? » : users/{uid}.scores["CPT-<classe>"] (CPT-T pour toutes les classes), meilleur score conservé
   const[scores,sScores]=useState({});
   const uid=me&&me.uid;
@@ -424,7 +427,7 @@ function GuideView({K,mob,lignes,db,me,exo0=null}){
         <ul style={{margin:"8px 0 2px 18px",display:"flex",flexDirection:"column",gap:5}}>{r.p.map((x,j)=><li key={j} style={{fontSize:12,color:K.t2,lineHeight:1.55}}>{x}</li>)}</ul>
       </details>)}
     </div>
-    :<GuideComptes K={K} mob={mob} onScore={onScore} scores={scores} depart={exo0!=null?{v:"exo",k:exo0}:null} fiche={c=><FicheContenu K={K} c={c} f={ficheCompte(c)} ligne={ligneDe(c)}/>}/>}
+    :<GuideComptes K={K} mob={mob} onScore={onScore} scores={scores} verrou={staff?null:k=>verrouCpt(k,{scores})} depart={exo0!=null?{v:"exo",k:exo0}:null} fiche={c=><FicheContenu K={K} c={c} f={ficheCompte(c)} ligne={ligneDe(c)}/>}/>}
   </div>;
 }
 

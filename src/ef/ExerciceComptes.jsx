@@ -22,7 +22,9 @@ const ETATS = {
 };
 const vide = () => [{ c: "", s: "D" }, { c: "", s: "C" }];
 
-export default function ExerciceComptes({ K, mob, classes, k0 = 0, titreDe, ecriture, onFiche, onScore, scores = {} }) {
+export default function ExerciceComptes({ K, mob, classes, k0 = 0, titreDe, ecriture, onFiche, onScore, scores = {}, verrou }) {
+  // verrou(k) : null si la série est ouverte, sinon la raison (parcours progressifs, src/attest/regles.js verrouCpt)
+  const ferme = n => (verrou ? verrou(n) : null);
   const [k, sK] = useState(k0);
   const [serie, sSerie] = useState(null);
   const [i, sI] = useState(0);
@@ -52,7 +54,7 @@ export default function ExerciceComptes({ K, mob, classes, k0 = 0, titreDe, ecri
   const teinte = pct => ({ bon: K.em, moyen: K.wa, faible: K.er, aucun: K.t3 }[niveau(pct)]);
   const meilleur = n => scores[cleCpt(n)];
   const choixClasse = (actif, onPick) => <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-    {[[0, "Toutes"], ...CLASSES_REV.map(([n]) => [n, `Classe ${n}`])].map(([n, l]) => { const m = meilleur(n); return <button key={n} onClick={() => onPick(n)} className="bt" title={m ? `Meilleur score : ${m.pct} % (${m.n || 1} série${(m.n || 1) > 1 ? "s" : ""})` : "Pas encore de série"} style={{ ...btn(K), minHeight: 32, padding: "5px 11px", fontSize: 11.5, ...(actif === n ? { background: K.emBg, color: K.em, border: `1px solid ${K.emBd}` } : {}) }}>{l}{m && <span style={{ fontSize: 10.5, fontWeight: 800, color: teinte(m.pct) }}>{m.pct} %</span>}</button>; })}
+    {[[0, "Toutes"], ...CLASSES_REV.map(([n]) => [n, `Classe ${n}`])].map(([n, l]) => { const m = meilleur(n); return <button key={n} onClick={() => onPick(n)} className="bt" title={m ? `Meilleur score : ${m.pct} % (${m.n || 1} série${(m.n || 1) > 1 ? "s" : ""})` : "Pas encore de série"} style={{ ...btn(K), minHeight: 32, padding: "5px 11px", fontSize: 11.5, ...(ferme(n) ? { opacity: .6 } : {}), ...(actif === n ? { background: K.emBg, color: K.em, border: `1px solid ${K.emBd}` } : {}) }}>{ferme(n) && <i className="ti ti-lock" aria-label="verrouillé" style={{ fontSize: 12 }} />}{l}{m && <span style={{ fontSize: 10.5, fontWeight: 800, color: teinte(m.pct) }}>{m.pct} %</span>}</button>; })}
   </div>;
 
   // ── Accueil de l'exercice
@@ -65,7 +67,8 @@ export default function ExerciceComptes({ K, mob, classes, k0 = 0, titreDe, ecri
       <div style={{ fontSize: 11, fontWeight: 800, color: K.t3, textTransform: "uppercase", letterSpacing: .4, marginBottom: 8 }}>Choisissez le champ de la série</div>
       {choixClasse(k, sK)}
       <div style={{ fontSize: 12, color: K.t3, margin: "10px 0 12px" }}>{pool.length} écritures disponibles{k ? ` en classe ${k}` : ""} · série de {Math.min(NB_QUESTIONS, pool.length)} questions tirées au hasard.</div>
-      <button onClick={() => demarrer()} disabled={!pool.length} className="bt" style={btn(K, "p")}><i className="ti ti-player-play" style={{ fontSize: 15 }} />Commencer</button>
+      {ferme(k) && <div role="status" style={{ display: "flex", gap: 7, alignItems: "flex-start", fontSize: 12.5, color: K.wa, fontWeight: 700, background: K.waBg, border: `1px solid ${K.waBd}`, borderRadius: 10, padding: "8px 11px", marginBottom: 10, lineHeight: 1.45 }}><i className="ti ti-lock" style={{ fontSize: 15, marginTop: 1 }} />{ferme(k)}</div>}
+      <button onClick={() => demarrer()} disabled={!pool.length || !!ferme(k)} className="bt" style={{ ...btn(K, "p"), ...(ferme(k) ? { opacity: .5, cursor: "not-allowed" } : {}) }}><i className={`ti ti-${ferme(k) ? "lock" : "player-play"}`} style={{ fontSize: 15 }} />Commencer</button>
     </div>
   </div>;
 

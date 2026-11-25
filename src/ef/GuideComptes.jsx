@@ -20,7 +20,7 @@ const SUBS_VISIBLES = 14;
 const sansNumero = t => t.replace(/^\s*\d+\s*[—–).-]\s*/, "");
 const sansPrefixe = t => { const r = t.replace(/^Ce qui change avec le SYSCOHADA révisé\s*:\s*/i, ""); return r.charAt(0).toUpperCase() + r.slice(1); };
 
-export default function GuideComptes({ K, mob, fiche, onScore, scores, depart }) {
+export default function GuideComptes({ K, mob, fiche, onScore, scores, depart, verrou }) {
   const [nav, sNav] = useState(depart || { v: "accueil" }); // { v: accueil | classe | compte | annexe | reperes | cloture, k, c, sub }
   const [tousSubs, sTousSubs] = useState(false);
   const [plan, sPlan] = useState(null);
@@ -277,7 +277,7 @@ export default function GuideComptes({ K, mob, fiche, onScore, scores, depart })
 
   const vueExo = () => !tout ? attente : <>
     {fil([["Classes", { v: "accueil" }], ["Exercice « Quel compte ? »"]])}
-    <ExerciceComptes key={nav.k} K={K} mob={mob} classes={Object.values(classes).sort((a, b) => a.classe - b.classe)} k0={nav.k || 0} titreDe={titreDe} ecriture={ecriture} onFiche={c => ouvrirCompte(c)} onScore={onScore} scores={scores || {}} />
+    <ExerciceComptes key={nav.k} K={K} mob={mob} classes={Object.values(classes).sort((a, b) => a.classe - b.classe)} k0={nav.k || 0} titreDe={titreDe} ecriture={ecriture} onFiche={c => ouvrirCompte(c)} onScore={onScore} scores={scores || {}} verrou={verrou} />
   </>;
 
   const vueAnnexe = () => {

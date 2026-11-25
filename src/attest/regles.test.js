@@ -1,4 +1,4 @@
-import { FISC, FIN, SYC, BQ, EF, DT, SYS1, etatSyc, etatParcours, EXAMENS, PARCOURS, SEUIL_ELEMENT, SEUIL_MOYENNE, elementsParcours, evaluer, mention, numeroAttestation, numeroValide } from "./regles";
+import { FISC, FIN, SYC, BQ, EF, DT, SYS1, etatSyc, etatParcours, verrouCpt, EXAMENS, PARCOURS, SEUIL_ELEMENT, SEUIL_MOYENNE, elementsParcours, evaluer, mention, numeroAttestation, numeroValide } from "./regles";
 import { MODULES_FISC } from "../fiscal/modules";
 import { MODULES_FIN } from "../finance/modules";
 import { MODULES_SYC } from "../sycebnl/modules";
@@ -110,10 +110,24 @@ test("ouverture progressive : acquis conservés et examen final", () => {
   const tous = p => Object.fromEntries(FISC.map(([f]) => [`FISC-${f}`, { pct: p }]));
   expect(etatParcours("FISC", [], { scores: tous(79) })).toMatchObject({ tousReussis: true, finalOuvert: false, moyenne: 79 });
   expect(etatParcours("FISC", [], { scores: tous(80) })).toMatchObject({ tousReussis: true, finalOuvert: true, nReussis: 15 });
-  // SYS-N1 : S1 réussi ouvre S2 ; « Quel compte ? » s'ouvre après S12, ou dès qu'il a été commencé ; SYS-N2 : pas d'ordre imposé
+  // SYS-N1 : S1 réussi ouvre S2 ; « Quel compte ? » s'ouvre après S12, ou dès qu'il a été commencé ; SYS-N2 : ZAO puis classes 1 à 9
   const n1 = etatParcours("SYS-N1", mods, { scores: { "SY-S1": { pct: 70 } } });
   expect(n1.elements.slice(0, 3).map(x => [x.cle, x.ouvert])).toEqual([["SY-S1", true], ["SY-S2", true], ["SY-S3", false]]);
   expect(n1.elements[12]).toMatchObject({ cle: "CPT-T", ouvert: false });
   expect(etatParcours("SYS-N1", [], { scores: { "CPT-T": { pct: 40 } } }).elements[12].ouvert).toBe(true);
-  expect(etatParcours("SYS-N2", [], {}).elements.every(x => x.ouvert)).toBe(true);
+  expect(etatParcours("SYS-N2", [], {}).elements.map(x => x.ouvert).slice(0, 3)).toEqual([true, false, false]);
+  const n2 = etatParcours("SYS-N2", [], { scores: { "JRN-ZAO": { pct: 75 }, "CPT-1": { pct: 70 }, "CPT-2": { pct: 50 }, "CPT-5": { pct: 30 } } });
+  // ZAO réussi → classe 1 ; classe 1 réussie → classe 2 ; classe 2 à 50 % → classe 3 fermée ; classe 5 déjà commencée : acquis conservé
+  expect(n2.elements.slice(0, 7).map(x => x.ouvert)).toEqual([true, true, true, false, false, true, false]);
+  expect(n2.finalOuvert).toBe(false);
+});
+
+test("Guide des comptes : l'exercice « Quel compte ? » suit l'ordre des parcours", () => {
+  expect(verrouCpt(1, {})).toBe("S'ouvre quand la monographie ZAO IMMO est réussie à 70 %.");
+  expect(verrouCpt(1, { scores: { "JRN-ZAO": { pct: 70 } } })).toBeNull();
+  expect(verrouCpt(3, { scores: { "JRN-ZAO": { pct: 90 }, "CPT-1": { pct: 80 }, "CPT-2": { pct: 60 } } })).toBe("S'ouvre quand la série de la classe 2 est réussie à 70 %.");
+  expect(verrouCpt(3, { scores: { "JRN-ZAO": { pct: 90 }, "CPT-1": { pct: 80 }, "CPT-2": { pct: 70 } } })).toBeNull();
+  // toutes classes (CPT-T) : élément du Niveau 1, après le module S12
+  expect(verrouCpt(0, {})).toMatch(/S12/);
+  expect(verrouCpt(0, { scores: { "CPT-T": { pct: 20 } } })).toBeNull();
 });
