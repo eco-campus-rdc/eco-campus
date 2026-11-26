@@ -4,7 +4,7 @@
   "description": "Fonctions serveur d'Éco-Campus RDC sur Firebase : routes /api (attestation, filleuls, push, tableau) et tâches planifiées (taches.js). Le code partagé vient de api/ et src/ : voir preparer.js.",
   "main": "index.js",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "scripts": {
     "preparer": "node preparer.js"
