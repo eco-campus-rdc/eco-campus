@@ -49,7 +49,8 @@ service jusqu'à la fin.
 3. Installez l'application GitHub **Claude** sur l'organisation, puis dites-le-moi : je rattache le nouveau dépôt à la session.
 4. Vérifiez dans Settings › Secrets que les secrets sont toujours là. Au transfert (26/11/2026), seul `FIREBASE_DEPLOY_KEY`
    existait : les secrets Android de signature (`ANDROID_KEYSTORE_…`) seront à créer avant la publication sur le Play Store.
-5. Vercel › projet › Settings › **Git** : vérifiez que le dépôt connecté est `eco-campus-rdc/eco-campus`.
+5. Vercel : équipe › Settings › Git › **Connect** sur l'organisation, puis projet › Settings › Git › **Disconnect** et
+   **Connect** sur `eco-campus-rdc/eco-campus` (la liaison antérieure au transfert ne reçoit plus les commits).
 
 ## Étape C — Le domaine (1 h)
 
