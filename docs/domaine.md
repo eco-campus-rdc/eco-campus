@@ -15,6 +15,7 @@ service jusqu'à la fin.
 | A. Formule Blaze et alerte de budget à 5 $ | Fait, **provisoirement** sur le compte de facturation personnel (01B6EF-…) : le compte Éco-Campus (0178A3-…) attend son prépaiement. Dès qu'il est actif : Google Cloud › Facturation › Gérer les comptes › Vos projets › access-plus-consulting › Modifier la facturation. |
 | A. Nom du projet « Eco-Campus RDC », nom public « Éco-Campus RDC », e-mail associé ecocampus.rdc@gmail.com | Fait |
 | B. Organisation **eco-campus-rdc** (2 propriétaires : ecocampusrdc-coder, gdeonnkuli-cmyk) et dépôt **eco-campus-rdc/eco-campus** | Fait |
+| B. Applications GitHub **Claude** et **Vercel** installées sur l'organisation ; projet Vercel relié à eco-campus-rdc/eco-campus | Fait |
 | D. Compte de service `ecocampus-deploy`, secret `FIREBASE_DEPLOY_KEY`, premier déploiement | Fait : https://access-plus-consulting.web.app (site, API et 4 tâches planifiées, Node.js 22) |
 | C et E. Domaine ecocampus-rdc.com, puis bascule | À faire |
 
