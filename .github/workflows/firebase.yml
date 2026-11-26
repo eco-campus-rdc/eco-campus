@@ -50,4 +50,9 @@ jobs:
 
       - name: Déployer sur Firebase (hébergement et fonctions)
         if: env.CLE != ''
-        run: npx --yes firebase-tools@13 deploy --only hosting,functions --project access-plus-consulting --non-interactive --force
+        run: npx --yes firebase-tools@14 deploy --only hosting,functions --project access-plus-consulting --non-interactive --force
+
+      # Images de build des fonctions (Artifact Registry) : supprimées au bout d'un jour, pour éviter des frais de stockage.
+      - name: Nettoyage automatique des images de build
+        if: env.CLE != ''
+        run: npx --yes firebase-tools@14 functions:artifacts:setpolicy --location europe-west1 --days 1 --force --project access-plus-consulting --non-interactive
