@@ -1,4 +1,5 @@
 # Déploiement d'Éco-Campus RDC sur Firebase (hébergement + fonctions serveur), à chaque mise à jour de main.
+# Pas de package-lock.json dans le dépôt (ignoré, comme pour Vercel) : installation par npm install, sans cache npm.
 # Clé requise : secret FIREBASE_DEPLOY_KEY (clé JSON d'un compte de service de déploiement, voir docs/domaine.md).
 # Sans ce secret, le flux s'arrête proprement avec une note : rien n'est déployé et le site Vercel reste en service.
 name: Déploiement Firebase
@@ -30,12 +31,11 @@ jobs:
         if: env.CLE != ''
         with:
           node-version: "20"
-          cache: npm
 
       - name: Installer, tester et construire l'application
         if: env.CLE != ''
         run: |
-          npm ci
+          npm install --no-audit --no-fund
           CI=true npx react-scripts test --watchAll=false
           npm run build
 
